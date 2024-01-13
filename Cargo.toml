@@ -1,0 +1,32 @@
+[package]
+name = "ultimate64"
+version = "0.1.0"
+edition = "2021"
+authors = ["Mikael Lund <lyssky@icloud.com>"]
+homepage = "https://github.com/mlund/ultimate64"
+repository = "https://github.com/mlund/ultimate64"
+documentation = "https://docs.rs/ultimate64"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["c64", "network", "8-bit"]
+categories = ["command-line-utilities"]
+
+[[bin]]
+name = "ultimate64"
+path = "src/main.rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.0", features = ["derive", "env"] }
+parse_int = "0.6"
+reqwest = { version = "0.11", features = ["blocking", "json"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+disasm6502 = "0.2"
+
+[profile.release]
+strip = true    # Automatically strip symbols from the binary.
+opt-level = "z" # Optimize for size.
+lto = true      # Link-time optimization
