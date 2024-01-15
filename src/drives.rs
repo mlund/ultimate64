@@ -1,11 +1,12 @@
+//! # Disk drive and file manipulation
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-pub enum DriveType {
-    Floppy1541,
-    Floppy1571,
-    Floppy1581,
-    Unknown,
+pub enum DriveMode {
+    CBM1541,
+    CBM1571,
+    CBM1581,
 }
 
 /// Drive description

@@ -1,3 +1,9 @@
+//!
+//! Rust library and command line interface for interfacing with [Ultimate-64 and Ultimate-II](https://ultimate64.com)
+//! hardware using the
+//! [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html).
+//!
+
 use anyhow::{Ok, Result};
 
 pub mod drives;
@@ -14,9 +20,8 @@ fn check_address_overflow(address: u16, length: u16) -> Result<()> {
     Ok(())
 }
 
-/// Communication with Ultimate series using REST API
-///
-/// https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html
+/// Communication with Ultimate series using
+/// the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html)
 ///
 /// # Examples
 /// ~~~
