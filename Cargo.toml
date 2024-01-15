@@ -2,6 +2,7 @@
 name = "ultimate64"
 version = "0.1.0"
 edition = "2021"
+description = "Rust library and command line interface for interfacing with Ultimate-64 and Ultimate-II devices using the REST API"
 authors = ["Mikael Lund <lyssky@icloud.com>"]
 homepage = "https://github.com/mlund/ultimate64"
 repository = "https://github.com/mlund/ultimate64"

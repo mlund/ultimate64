@@ -1,6 +1,5 @@
 //! # Disk drive and file manipulation
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 pub enum DriveMode {
