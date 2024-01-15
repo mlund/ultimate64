@@ -1,4 +1,7 @@
+[![Crates.io](https://img.shields.io/crates/v/ultimate64)](https://crates.io/crates/ultimate64)
 [![Rust](https://github.com/mlund/ultimate64/actions/workflows/rust.yml/badge.svg)](https://github.com/mlund/ultimate64/actions/workflows/rust.yml)
+[![rust-clippy analyze](https://github.com/mlund/ultimate64/actions/workflows/rust-clippy.yml/badge.svg)](https://github.com/mlund/ultimate64/actions/workflows/rust-clippy.yml)
+[![docs.rs](https://img.shields.io/docsrs/ultimate64)](https://docs.rs/ultimate64/latest/ultimate64)
 
 # Ultimate64
 
@@ -7,8 +10,8 @@ the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_call
 
 # Installation
 
-Currently no binaries are provided and you need to first install [Rust](https://www.rust-lang.org/tools/install).
-Then compile and install with:
+Currently no binaries are provided and you need to first install [Rust](https://www.rust-lang.org/tools/install),
+then compile and install with:
 
 ~~~ bash
 cargo install ultimate64
@@ -21,7 +24,7 @@ ultimate64 HOST COMMAND <OPTIONS>
 ~~~
 
 Where `HOST` is the IP address or hostname of the Ultimate device on your local network.
-Alternatively specify this in the envronmental variable `ULTIMATE_HOST` as
+Alternatively specify this in the environmental variable `ULTIMATE_HOST` as
 assumed in the following examples.
 
 ## Examples
