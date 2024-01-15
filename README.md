@@ -1,3 +1,5 @@
+[![Rust](https://github.com/mlund/ultimate64/actions/workflows/rust.yml/badge.svg)](https://github.com/mlund/ultimate64/actions/workflows/rust.yml)
+
 # Ultimate64
 
 Rust library and command line interface for interfacing with [Ultimate-64 and Ultimate-II](https://ultimate64.com) devices using
