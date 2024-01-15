@@ -5,6 +5,7 @@
 //!
 
 use anyhow::{Ok, Result};
+use log::debug;
 
 pub mod drives;
 
@@ -18,6 +19,17 @@ fn check_address_overflow(address: u16, length: u16) -> Result<()> {
         )
     })?;
     Ok(())
+}
+
+/// Helper funtion to extract load address from first two bytes of data, little endian format
+fn extract_load_address(data: &[u8]) -> Result<u16> {
+    if data.len() < 2 {
+        return Err(anyhow::anyhow!(
+            "Data must be two or more bytes to detect load address"
+        ));
+    }
+    let load_address = u16::from_le_bytes([data[0], data[1]]);
+    Ok(load_address)
 }
 
 /// Communication with Ultimate series using
@@ -39,6 +51,7 @@ pub struct Rest {
 
 impl Rest {
     /// Create new Rest instance
+    ///
     /// # Arguments
     /// * `host` - Hostname or IP address of Ultimate-64 of Ultimate-II
     pub fn new(host: &str) -> Self {
@@ -70,16 +83,16 @@ impl Rest {
         Ok(body)
     }
 
-    /// Load PRG bytes into memory.
+    /// Load PRG bytes into memory - do NOT run.
     /// The machine resets, and loads the attached program into memory using DMA.
-    /// It does not automatically run the program.
     pub fn load_prg(&self, prg_data: &[u8]) -> Result<()> {
         let url = format!("{}/runners:load_prg", self.url_pfx);
         self.client.post(url).body(prg_data.to_vec()).send()?;
         Ok(())
     }
 
-    /// Load and run PRG bytes into memory.
+    /// Load and run PRG bytes into memory
+    ///
     /// The machine resets, and loads the attached program into memory using DMA.
     pub fn run_prg(&self, data: &[u8]) -> Result<()> {
         let url = format!("{}/runners:run_prg", self.url_pfx);
@@ -87,34 +100,52 @@ impl Rest {
         Ok(())
     }
 
+    /// Start supplied cartridge file
+    ///
+    /// The ‘crt’ file is attached to the POST request.
+    /// The machine resets, with the attached cartridge active.
+    /// It does not alter the configuration of the Ultimate.
+    pub fn run_crt(&self, data: &[u8]) -> Result<()> {
+        debug!("Run CRT file of {} bytes", data.len());
+        let url = format!("{}/runners:run_crt", self.url_pfx);
+        self.client.post(url).body(data.to_vec()).send()?;
+        Ok(())
+    }
+
     /// Reset machine
     pub fn reset(&self) -> Result<()> {
+        debug!("Reset machine");
         self.put("machine:reset")?;
         Ok(())
     }
     /// Reboot machine
     pub fn reboot(&self) -> Result<()> {
+        debug!("Reboot machine");
         self.put("machine:reboot")?;
         Ok(())
     }
     /// Pause machine
     pub fn pause(&self) -> Result<()> {
+        debug!("Pause machine");
         self.put("machine:pause")?;
         Ok(())
     }
     /// Resume machine
     pub fn resume(&self) -> Result<()> {
+        debug!("Resume machine");
         self.put("machine:resume")?;
         Ok(())
     }
     /// Poweroff machine
     pub fn poweroff(&self) -> Result<()> {
+        debug!("Poweroff machine");
         self.put("machine:poweroff")?;
         Ok(())
     }
 
     /// Write data to memory using a POST request
     pub fn write_mem(&self, address: u16, data: &[u8]) -> Result<()> {
+        debug!("Write {} bytes to 0x{:#x}", data.len(), address);
         check_address_overflow(address, data.len() as u16)?;
         let url = format!("{}/machine:writemem?address={:x}", self.url_pfx, address);
         self.client.post(url).body(data.to_vec()).send()?;
@@ -123,6 +154,7 @@ impl Rest {
 
     /// Read `length` bytes from `address`
     pub fn read_mem(&self, address: u16, length: u16) -> Result<Vec<u8>> {
+        debug!("Read {} bytes from 0x{:#x}", length, address);
         check_address_overflow(address, length)?;
         let url = format!(
             "{}/machine:readmem?address={:x}&length={}",
@@ -157,13 +189,8 @@ impl Rest {
         match address {
             Some(address) => self.write_mem(address, data),
             None => {
-                if data.len() < 2 {
-                    return Err(anyhow::anyhow!(
-                        "Data length {} is too short to deduce load address",
-                        data.len()
-                    ));
-                }
-                let load_address = u16::from_le_bytes([data[0], data[1]]);
+                let load_address = extract_load_address(data)?;
+                debug!("Detected load address: 0x{:#x}", load_address);
                 self.write_mem(load_address, &data[2..]) // skip first two bytes
             }
         }

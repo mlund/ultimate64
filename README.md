@@ -32,7 +32,7 @@ assumed in the following examples.
 ~~~ bash
 ultimate64 --help                            # show available commands
 ultimate64 pause                             # pause machine
-ultimate64 prg skate_or_die.prg              # load and run PRG file
+ultimate64 run skate_or_die.prg              # load and run PRG file
 ultimate64 load sprites.dat --address 0x2000 # load data to memory
 ultimate65 peek 0x1000 --dasm -n 32          # disassemble 32 bytes
 ultimate65 poke 0xd020 3                     # write single byte
@@ -49,7 +49,7 @@ Addresses can be decimal (`4096`) or hexadecimal (`0x1000`).
 - [x] Modern CLI with subcommands
 - [x] World class memory safety due to Rust
 - [x] Excellent error handling and error messages
-- [x] Convenient decimal, hexademical, binary and even octal input
+- [x] Convenient decimal, hexadecimal and binary input
 - [x] 6502 disassembly
 - [x] Load address detection
 

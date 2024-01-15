@@ -71,10 +71,10 @@ enum Commands {
     },
     /// Power off machine
     Poweroff,
-    /// Load and run PRG file
+    /// Load and run PRG or CRT file
     #[command(arg_required_else_help = true)]
-    Prg {
-        /// PRG file to load
+    Run {
+        /// PRG or CRT file to load and run
         file: std::ffi::OsString,
     },
     /// Reboot machine
@@ -148,9 +148,12 @@ fn do_main() -> Result<()> {
         Commands::Resume => {
             ultimate.resume()?;
         }
-        Commands::Prg { file } => {
-            let data = std::fs::read(file)?;
-            ultimate.run_prg(&data)?;
+        Commands::Run { file } => {
+            let data = std::fs::read(&file)?;
+            match get_extension(file).as_str() {
+                "crt" => ultimate.run_crt(&data)?,
+                _ => ultimate.run_prg(&data)?,
+            }
         }
         Commands::Sidplay { file, songnr } => {
             let data = std::fs::read(file)?;
@@ -170,6 +173,15 @@ fn do_main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// Extracts file extension from `file` to a lowercase string
+fn get_extension(file: std::ffi::OsString) -> String {
+    std::path::Path::new(&file)
+        .extension()
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or_default()
+        .to_lowercase()
 }
 
 fn main() {
