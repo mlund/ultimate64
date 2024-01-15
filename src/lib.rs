@@ -211,6 +211,8 @@ impl Rest {
         );
         let file = std::fs::File::open(path)?;
         self.client.post(url).body(file).send()?;
-        Ok(())
+        Err(anyhow::anyhow!(
+            "Disk mounting is unfinished and currently doesn't work"
+        ))
     }
 }

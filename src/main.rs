@@ -13,6 +13,26 @@ fn styles() -> Styles {
         .placeholder(AnsiColor::Green.on_default())
 }
 
+/// Helper function to extract file extension from `file` to a lowercase string
+fn get_extension(file: &std::ffi::OsString) -> String {
+    std::path::Path::new(&file)
+        .extension()
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or_default()
+        .to_lowercase()
+}
+
+/// Helper function to determine if file is a disk image using its extension
+fn check_if_disk_image(file: &std::ffi::OsString) -> Result<()> {
+    let ext = get_extension(file);
+    if !["d64", "d71", "d81", "g64", "g71"].contains(&ext.as_str()) {
+        return Err(anyhow::anyhow!(
+            "File extension must be one of: d64, d71, d81, g64, g71"
+        ));
+    }
+    Ok(())
+}
+
 /// A fictional versioning CLI
 #[derive(Debug, Parser)] // requires `derive` feature
 #[command(name = "ultimate64")]
@@ -27,6 +47,21 @@ struct Cli {
     /// Subcommand to run
     #[command(subcommand)]
     command: Commands,
+}
+
+#[derive(Debug, Subcommand)]
+enum DiskImageCmd {
+    /// Mount disk image (unfinished)
+    Mount {
+        /// Image file
+        file: std::ffi::OsString,
+        /// Drive number
+        #[clap(long, short = 'i', default_value = "8")]
+        drive_id: u8,
+        /// Mount mode: read only (ro), write only (wo), or unlinked (ul)
+        #[clap(long, short = 'm', default_value = "ro")]
+        mode: drives::MountMode,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -46,16 +81,10 @@ enum Commands {
         /// MOD file
         file: std::ffi::OsString,
     },
-    /// Mount disk image
-    Mount {
-        /// Image file
-        file: std::ffi::OsString,
-        /// Drive number
-        #[clap(long, short = 'i', default_value = "8")]
-        drive_id: u8,
-        /// Mount mode, e.g. `rw`, `ro`, `ul`. Default is `rw`
-        #[clap(long, short = 'm', default_value = "ro")]
-        mode: drives::MountMode,
+    /// Disk image operations
+    Image {
+        #[clap(subcommand)]
+        command: DiskImageCmd,
     },
     /// Pause machine
     Pause,
@@ -161,7 +190,7 @@ fn do_main() -> Result<()> {
         }
         Commands::Run { file } => {
             let data = std::fs::read(&file)?;
-            match get_extension(file).as_str() {
+            match get_extension(&file).as_str() {
                 "crt" => ultimate.run_crt(&data)?,
                 _ => ultimate.run_prg(&data)?,
             }
@@ -182,24 +211,18 @@ fn do_main() -> Result<()> {
             let data = std::fs::read(file)?;
             ultimate.load_data(&data, address_int)?;
         }
-        Commands::Mount {
-            file,
-            drive_id,
-            mode: mount_mode,
-        } => {
-            ultimate.mount_disk_image(&file, drive_id, mount_mode)?;
-        }
+        Commands::Image { command } => match command {
+            DiskImageCmd::Mount {
+                file,
+                drive_id,
+                mode,
+            } => {
+                check_if_disk_image(&file)?;
+                ultimate.mount_disk_image(&file, drive_id, mode)?;
+            }
+        },
     }
     Ok(())
-}
-
-/// Extracts file extension from `file` to a lowercase string
-fn get_extension(file: std::ffi::OsString) -> String {
-    std::path::Path::new(&file)
-        .extension()
-        .and_then(std::ffi::OsStr::to_str)
-        .unwrap_or_default()
-        .to_lowercase()
 }
 
 fn main() {
