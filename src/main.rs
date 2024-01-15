@@ -2,7 +2,7 @@ use anyhow::Result;
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{Parser, Subcommand};
 use parse_int::parse;
-use ultimate64::Rest;
+use ultimate64::{drives, Rest};
 
 // Clap 4 colors: https://github.com/clap-rs/clap/issues/3234#issuecomment-1783820412
 fn styles() -> Styles {
@@ -45,6 +45,17 @@ enum Commands {
     Modplay {
         /// MOD file
         file: std::ffi::OsString,
+    },
+    /// Mount disk image
+    Mount {
+        /// Image file
+        file: std::ffi::OsString,
+        /// Drive number
+        #[clap(long, short = 'i', default_value = "8")]
+        drive_id: u8,
+        /// Mount mode, e.g. `rw`, `ro`, `ul`. Default is `rw`
+        #[clap(long, short = 'm', default_value = "ro")]
+        mode: drives::MountMode,
     },
     /// Pause machine
     Pause,
@@ -170,6 +181,13 @@ fn do_main() -> Result<()> {
             };
             let data = std::fs::read(file)?;
             ultimate.load_data(&data, address_int)?;
+        }
+        Commands::Mount {
+            file,
+            drive_id,
+            mode: mount_mode,
+        } => {
+            ultimate.mount_disk_image(&file, drive_id, mount_mode)?;
         }
     }
     Ok(())

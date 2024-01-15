@@ -195,4 +195,22 @@ impl Rest {
             }
         }
     }
+
+    /// Mount disk image
+    pub fn mount_disk_image(
+        &self,
+        path: &std::ffi::OsStr,
+        drive_id: u8,
+        mount_mode: drives::MountMode,
+    ) -> Result<()> {
+        let url = format!(
+            "{}/v1/drives/{}:mount?mode={}",
+            self.url_pfx,
+            drive_id,
+            String::from(mount_mode)
+        );
+        let file = std::fs::File::open(path)?;
+        self.client.post(url).body(file).send()?;
+        Ok(())
+    }
 }
