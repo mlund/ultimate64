@@ -58,8 +58,9 @@ enum DiskImageCmd {
         /// Drive number
         #[clap(long, short = 'i', default_value = "8")]
         drive_id: u8,
-        /// Mount mode: read only (ro), write only (wo), or unlinked (ul)
+        /// Mount mode
         #[clap(long, short = 'm', default_value = "ro")]
+        #[arg(value_enum)]
         mode: drives::MountMode,
     },
 }
@@ -88,7 +89,7 @@ enum Commands {
     },
     /// Pause machine
     Pause,
-    /// Read n bytes from memory; hex output
+    /// Read memory
     Peek {
         /// Address to read from, e.g. `4096` or `0x1000`
         address: String,
@@ -102,7 +103,7 @@ enum Commands {
         #[clap(long = "dasm", short = 'd', action, conflicts_with = "outfile")]
         disassemble: bool,
     },
-    /// Write a single byte to memory
+    /// Write single byte to memory
     Poke {
         /// Address to write to, e.g. `4096` or `0x1000`
         address: String,
@@ -137,10 +138,12 @@ enum Commands {
 /// # Panics
 /// Panics if the disassembler fails to disassemble the bytes
 fn print_disassembled(bytes: &[u8], address: u16) -> Result<()> {
-    let instructions = disasm6502::from_addr_array(bytes, address).unwrap();
-    for i in instructions {
-        println!("{}", i);
-    }
+    disasm6502::from_addr_array(bytes, address)
+        .unwrap()
+        .iter()
+        .for_each(|line| {
+            println!("{}", line);
+        });
     Ok(())
 }
 

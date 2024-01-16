@@ -1,9 +1,11 @@
 //! # Disk drive and disk image manipulation
 
+use anyhow::Result;
+use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 
 /// Disk drive types
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DriveType {
     #[serde(rename = "1541")]
     CBM1541,
@@ -14,29 +16,65 @@ pub enum DriveType {
 }
 
 /// Disk image types
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DiskImageType {
-    #[serde(rename = "d64")]
+    #[clap(name = "d64")]
     D64,
-    #[serde(rename = "g64")]
+    #[clap(name = "g64")]
     G64,
-    #[serde(rename = "d71")]
+    #[clap(name = "d71")]
     D71,
-    #[serde(rename = "g71")]
+    #[clap(name = "g71")]
     G71,
-    #[serde(rename = "d81")]
+    #[clap(name = "d81")]
     D81,
 }
 
-impl From<&str> for DiskImageType {
-    fn from(s: &str) -> Self {
+impl DiskImageType {
+    /// Helper function to extract file extension from `file` to a lowercase string
+    fn get_extension(file: &std::ffi::OsString) -> String {
+        std::path::Path::new(&file)
+            .extension()
+            .and_then(std::ffi::OsStr::to_str)
+            .unwrap_or_default()
+            .to_lowercase()
+    }
+
+    /// New disk image type from file name
+    pub fn from_file_name(path: &std::ffi::OsString) -> Result<Self> {
+        match Self::get_extension(path).as_str() {
+            "d64" => Ok(DiskImageType::D64),
+            "g64" => Ok(DiskImageType::G64),
+            "d71" => Ok(DiskImageType::D71),
+            "g71" => Ok(DiskImageType::G71),
+            "d81" => Ok(DiskImageType::D81),
+            _ => Err(anyhow::anyhow!(
+                "File extension must be one of: d64, d71, d81, g64, g71"
+            )),
+        }
+    }
+    /// Get file extension for disk image type
+    pub fn extension(&self) -> String {
+        match self {
+            DiskImageType::D64 => "d64".to_string(),
+            DiskImageType::G64 => "g64".to_string(),
+            DiskImageType::D71 => "d71".to_string(),
+            DiskImageType::G71 => "g71".to_string(),
+            DiskImageType::D81 => "d81".to_string(),
+        }
+    }
+}
+
+impl TryFrom<&str> for DiskImageType {
+    type Error = String;
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s {
-            "d64" => DiskImageType::D64,
-            "g64" => DiskImageType::G64,
-            "d71" => DiskImageType::D71,
-            "g71" => DiskImageType::G71,
-            "d81" => DiskImageType::D81,
-            _ => panic!("Unknown disk image type: {}", s),
+            "d64" => Ok(DiskImageType::D64),
+            "g64" => Ok(DiskImageType::G64),
+            "d71" => Ok(DiskImageType::D71),
+            "g71" => Ok(DiskImageType::G71),
+            "d81" => Ok(DiskImageType::D81),
+            _ => Err(format!("Unknown disk image type: {}", s)),
         }
     }
 }
@@ -54,20 +92,27 @@ impl From<DiskImageType> for String {
 }
 
 /// Drive mount modes
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
 pub enum MountMode {
+    /// Read and write access
+    #[clap(name = "rw")]
     ReadWrite,
+    /// Read only access
+    #[clap(name = "ro")]
     ReadOnly,
+    /// Unlinked
+    #[clap(name = "unlinked")]
     Unlinked,
 }
 
-impl From<&str> for MountMode {
-    fn from(s: &str) -> Self {
+impl TryFrom<&str> for MountMode {
+    type Error = String;
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s {
-            "rw" => MountMode::ReadWrite,
-            "ro" => MountMode::ReadOnly,
-            "ul" => MountMode::Unlinked,
-            _ => panic!("Unknown mount mode: {}", s),
+            "rw" => Ok(MountMode::ReadWrite),
+            "ro" => Ok(MountMode::ReadOnly),
+            "unlinked" => Ok(MountMode::Unlinked),
+            _ => Err(format!("Unknown mount mode: {}", s)),
         }
     }
 }
@@ -77,7 +122,7 @@ impl From<MountMode> for String {
         match m {
             MountMode::ReadWrite => "rw".to_string(),
             MountMode::ReadOnly => "ro".to_string(),
-            MountMode::Unlinked => "ul".to_string(),
+            MountMode::Unlinked => "unlinked".to_string(),
         }
     }
 }
