@@ -1,10 +1,22 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
 cff-version: 1.2.0
-message: "This software can be cited as below."
+title: >-
+  Ultimate64 - Rust library and CLI for communicating with
+  Ultimate-64 and Ultimate-II+ devices
+message: >-
+  This software can be cited as below.
+type: software
 authors:
-- family-names: "Lund"
-  given-names: "Mikael"
-  orcid: "https://orcid.org/0000-0001-8178-8175"
-title: "Ultimate64 - Rust library and CLI for communicating with Ultimate-64 and Ultimate-II+ devices"
+  - given-names: Mikael
+    family-names: Lund
+    orcid: 'https://orcid.org/0000-0001-8178-8175'
+repository-code: 'https://github.com/mlund/ultimate64'
+keywords:
+  - commodore-64
+  - rust
+  - 8-bit
+license: Apache-2.0
 version: 0.2.0
-date-released: 2024-01-16
-url: "https://github.com/mlund/ultimate64"
+
