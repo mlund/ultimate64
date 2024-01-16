@@ -6,12 +6,12 @@
 
 # Ultimate64
 
-Rust library and command line interface for interfacing with [Ultimate-64 and Ultimate-II+](https://ultimate64.com) devices using
+Rust library and command line interface for communicating with [Ultimate-64 and Ultimate-II+](https://ultimate64.com) devices using
 the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html).
 
 # Installation
 
-Either download a [precompiled binary](https://github.com/mlund/ultimate64/releases/latest),
+Either download a [pre-compiled binary](https://github.com/mlund/ultimate64/releases/latest),
 or compile and install using `cargo`, provided that you have a working
 [Rust](https://www.rust-lang.org/tools/install) installation:
 
