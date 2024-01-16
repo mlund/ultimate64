@@ -6,13 +6,14 @@
 
 # Ultimate64
 
-Rust library and command line interface for interfacing with [Ultimate-64 and Ultimate-II](https://ultimate64.com) devices using
+Rust library and command line interface for interfacing with [Ultimate-64 and Ultimate-II+](https://ultimate64.com) devices using
 the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html).
 
 # Installation
 
-Currently no binaries are provided and you need to first install [Rust](https://www.rust-lang.org/tools/install),
-then compile and install with:
+Either download a [precompiled binary](https://github.com/mlund/ultimate64/releases/latest),
+or compile and install using `cargo`, provided that you have a working
+[Rust](https://www.rust-lang.org/tools/install) installation:
 
 ~~~ bash
 cargo install ultimate64
@@ -41,7 +42,7 @@ ultimate64 sidplay yie_ar_kung_fu.sid -n 2   # play SID tune
 ultimate64 modplay enigma.mod                # play Amiga MOD tune
 ~~~
 
-Addresses can be decimal (`4096`) or hexadecimal (`0x1000`).
+Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
 
 # Features
 
@@ -53,8 +54,8 @@ Addresses can be decimal (`4096`) or hexadecimal (`0x1000`).
 - [x] Convenient decimal, hexadecimal and binary input
 - [x] 6502 disassembly
 - [x] Load address detection
+- [x] Precompiled binaries for MacOS, Linux, and Windows
 
 ## Todo
 
-- [ ] Binary distribution for MacOS, Linux, and Windows
 - [ ] Disk image and file manipulation

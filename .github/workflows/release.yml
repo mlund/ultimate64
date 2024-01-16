@@ -1,3 +1,4 @@
+# .github/workflows/release.yml
 on:
   release:
     types: [created]
