@@ -1,6 +1,7 @@
 [![Crates.io](https://img.shields.io/crates/v/ultimate64)](https://crates.io/crates/ultimate64)
 [![Rust](https://github.com/mlund/ultimate64/actions/workflows/rust.yml/badge.svg)](https://github.com/mlund/ultimate64/actions/workflows/rust.yml)
 [![rust-clippy analyze](https://github.com/mlund/ultimate64/actions/workflows/rust-clippy.yml/badge.svg)](https://github.com/mlund/ultimate64/actions/workflows/rust-clippy.yml)
+[![.github/workflows/release.yml](https://github.com/mlund/ultimate64/actions/workflows/release.yml/badge.svg)](https://github.com/mlund/ultimate64/actions/workflows/release.yml)
 [![docs.rs](https://img.shields.io/docsrs/ultimate64)](https://docs.rs/ultimate64/latest/ultimate64)
 
 # Ultimate64
