@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "This software can be cited as below."
+authors:
+- family-names: "Lund"
+  given-names: "Mikael"
+  orcid: "https://orcid.org/0000-0001-8178-8175"
+title: "Ultimate64 - Rust library and CLI for communicating with Ultimate-64 and Ultimate-II+ devices"
+version: 0.2.0
+date-released: 2024-01-16
+url: "https://github.com/mlund/ultimate64"
