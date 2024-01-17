@@ -107,7 +107,8 @@ enum Commands {
     Poke {
         /// Address to write to, e.g. `4096` or `0x1000`
         address: String,
-        /// Value to write
+        /// Value to write, e.g. `16`, `0x10` or `0b0001_0000`
+        #[arg(value_parser = parse_u8)]
         value: u8,
     },
     /// Power off machine
@@ -134,6 +135,9 @@ enum Commands {
     },
 }
 
+fn parse_u8(arg: &str) -> Result<u8, std::num::ParseIntError> {
+    parse::<u8>(arg)
+}
 /// Disassemble `length` bytes from memory, starting at `address`
 /// # Panics
 /// Panics if the disassembler fails to disassemble the bytes
