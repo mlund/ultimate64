@@ -65,6 +65,7 @@ impl Rest {
     /// Load PRG bytes into memory - do NOT run.
     /// The machine resets, and loads the attached program into memory using DMA.
     pub fn load_prg(&self, prg_data: &[u8]) -> Result<()> {
+        debug!("Load PRG file of {} bytes", prg_data.len());
         let url = format!("{}/runners:load_prg", self.url_pfx);
         self.client.post(url).body(prg_data.to_vec()).send()?;
         Ok(())
@@ -74,6 +75,7 @@ impl Rest {
     ///
     /// The machine resets, and loads the attached program into memory using DMA.
     pub fn run_prg(&self, data: &[u8]) -> Result<()> {
+        debug!("Run PRG file of {} bytes", data.len());
         let url = format!("{}/runners:run_prg", self.url_pfx);
         self.client.post(url).body(data.to_vec()).send()?;
         Ok(())
@@ -126,16 +128,15 @@ impl Rest {
 
     /// Write data to memory using a POST request
     pub fn write_mem(&self, address: u16, data: &[u8]) -> Result<()> {
-        debug!("Write {} bytes to {:#06x}", data.len(), address);
         aux::check_address_overflow(address, data.len() as u16)?;
         let url = format!("{}/machine:writemem?address={:x}", self.url_pfx, address);
         self.client.post(url).body(data.to_vec()).send()?;
+        debug!("Wrote {} byte(s) to {:#06x}", data.len(), address);
         Ok(())
     }
 
     /// Read `length` bytes from `address`
     pub fn read_mem(&self, address: u16, length: u16) -> Result<Vec<u8>> {
-        debug!("Read {} bytes from {:#06x}", length, address);
         aux::check_address_overflow(address, length)?;
         let url = format!(
             "{}/machine:readmem?address={:x}&length={}",
@@ -143,6 +144,7 @@ impl Rest {
         );
         let response = self.client.get(url).send()?;
         let bytes = response.bytes()?.to_vec();
+        debug!("Read {} bytes from {:#06x}", length, address);
         Ok(bytes)
     }
 
@@ -171,7 +173,6 @@ impl Rest {
             Some(address) => self.write_mem(address, data),
             None => {
                 let load_address = aux::extract_load_address(data)?;
-                debug!("Detected load address: {:#06x}", load_address);
                 self.write_mem(load_address, &data[2..]) // skip first two bytes
             }
         }

@@ -3,6 +3,7 @@
 //!
 
 use anyhow::Result;
+use log::debug;
 
 /// Check if 16-bit start address can contain `length` bytes
 ///
@@ -57,6 +58,8 @@ pub fn extract_load_address(data: &[u8]) -> Result<u16> {
             "Data must be two or more bytes to detect load address"
         ))
     } else {
-        Ok(u16::from_le_bytes([data[0], data[1]]))
+        let load_address = u16::from_le_bytes([data[0], data[1]]);
+        debug!("Detected load address: {:#06x}", load_address);
+        Ok(load_address)
     }
 }
