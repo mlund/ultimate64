@@ -15,7 +15,7 @@ fn styles() -> Styles {
 }
 
 /// Helper function to determine if file has a disk image extension
-pub fn has_disk_image_extension(file: &std::ffi::OsString) -> Result<()> {
+fn has_disk_image_extension(file: &std::ffi::OsString) -> Result<()> {
     drives::DiskImageType::from_file_name(file).map(|_| ())
 }
 
