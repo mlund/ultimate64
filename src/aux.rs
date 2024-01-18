@@ -31,7 +31,7 @@ pub fn check_address_overflow(address: u16, length: u16) -> Result<()> {
 /// # Examples
 /// ```
 /// use ultimate64::aux::get_extension;
-/// let path = std::ffi::OsString::from("foo.bar");
+/// let path = std::ffi::OsString::from("foo.bAR");
 /// let ext = get_extension(&path).unwrap();
 /// assert_eq!(ext, "bar");
 /// ```
