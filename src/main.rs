@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{Parser, Subcommand};
 use parse_int::parse;
+use ultimate64::aux;
 use ultimate64::{drives, Rest};
 
 // Clap 4 colors: https://github.com/clap-rs/clap/issues/3234#issuecomment-1783820412
@@ -13,24 +14,9 @@ fn styles() -> Styles {
         .placeholder(AnsiColor::Green.on_default())
 }
 
-/// Helper function to extract file extension from `file` to a lowercase string
-fn get_extension(file: &std::ffi::OsString) -> String {
-    std::path::Path::new(&file)
-        .extension()
-        .and_then(std::ffi::OsStr::to_str)
-        .unwrap_or_default()
-        .to_lowercase()
-}
-
-/// Helper function to determine if file is a disk image using its extension
-fn check_if_disk_image(file: &std::ffi::OsString) -> Result<()> {
-    let ext = get_extension(file);
-    if !["d64", "d71", "d81", "g64", "g71"].contains(&ext.as_str()) {
-        return Err(anyhow::anyhow!(
-            "File extension must be one of: d64, d71, d81, g64, g71"
-        ));
-    }
-    Ok(())
+/// Helper function to determine if file has a disk image extension
+pub fn has_disk_image_extension(file: &std::ffi::OsString) -> Result<()> {
+    drives::DiskImageType::from_file_name(file).map(|_| ())
 }
 
 /// A fictional versioning CLI
@@ -225,7 +211,7 @@ fn do_main() -> Result<()> {
         }
         Commands::Run { file } => {
             let data = std::fs::read(&file)?;
-            match get_extension(&file).as_str() {
+            match aux::get_extension(&file).unwrap_or_default().as_str() {
                 "crt" => ultimate.run_crt(&data)?,
                 _ => ultimate.run_prg(&data)?,
             }
@@ -248,7 +234,7 @@ fn do_main() -> Result<()> {
                 drive_id,
                 mode,
             } => {
-                check_if_disk_image(&file)?;
+                has_disk_image_extension(&file)?;
                 ultimate.mount_disk_image(&file, drive_id, mode)?;
             }
         },

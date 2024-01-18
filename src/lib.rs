@@ -7,33 +7,8 @@
 use anyhow::{Ok, Result};
 use log::debug;
 
+pub mod aux;
 pub mod drives;
-
-/// Check if start address can contain `length` bytes
-fn check_address_overflow(address: u16, length: u16) -> Result<()> {
-    if length == 0 {
-        return Ok(());
-    }
-    u16::checked_add(address, length - 1).ok_or_else(|| {
-        anyhow::anyhow!(
-            "Address {:#x} + length {:#x} overflows address space",
-            address,
-            length
-        )
-    })?;
-    Ok(())
-}
-
-/// Helper funtion to extract load address from first two bytes of data, little endian format
-fn extract_load_address(data: &[u8]) -> Result<u16> {
-    if data.len() < 2 {
-        return Err(anyhow::anyhow!(
-            "Data must be two or more bytes to detect load address"
-        ));
-    }
-    let load_address = u16::from_le_bytes([data[0], data[1]]);
-    Ok(load_address)
-}
 
 /// Communication with Ultimate series using
 /// the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html)
@@ -150,7 +125,7 @@ impl Rest {
     /// Write data to memory using a POST request
     pub fn write_mem(&self, address: u16, data: &[u8]) -> Result<()> {
         debug!("Write {} bytes to 0x{:#x}", data.len(), address);
-        check_address_overflow(address, data.len() as u16)?;
+        aux::check_address_overflow(address, data.len() as u16)?;
         let url = format!("{}/machine:writemem?address={:x}", self.url_pfx, address);
         self.client.post(url).body(data.to_vec()).send()?;
         Ok(())
@@ -159,7 +134,7 @@ impl Rest {
     /// Read `length` bytes from `address`
     pub fn read_mem(&self, address: u16, length: u16) -> Result<Vec<u8>> {
         debug!("Read {} bytes from 0x{:#x}", length, address);
-        check_address_overflow(address, length)?;
+        aux::check_address_overflow(address, length)?;
         let url = format!(
             "{}/machine:readmem?address={:x}&length={}",
             self.url_pfx, address, length
@@ -193,7 +168,7 @@ impl Rest {
         match address {
             Some(address) => self.write_mem(address, data),
             None => {
-                let load_address = extract_load_address(data)?;
+                let load_address = aux::extract_load_address(data)?;
                 debug!("Detected load address: 0x{:#x}", load_address);
                 self.write_mem(load_address, &data[2..]) // skip first two bytes
             }
