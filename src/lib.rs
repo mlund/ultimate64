@@ -9,9 +9,12 @@ use log::debug;
 
 pub mod drives;
 
-/// Check if address + length overflows address space
+/// Check if start address can contain `length` bytes
 fn check_address_overflow(address: u16, length: u16) -> Result<()> {
-    u16::checked_add(address, length).ok_or_else(|| {
+    if length == 0 {
+        return Ok(());
+    }
+    u16::checked_add(address, length - 1).ok_or_else(|| {
         anyhow::anyhow!(
             "Address {:#x} + length {:#x} overflows address space",
             address,
@@ -36,7 +39,7 @@ fn extract_load_address(data: &[u8]) -> Result<u16> {
 /// the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html)
 ///
 /// # Examples
-/// ~~~
+/// ~~~ rust, ignore
 /// use ultimate64::Rest;
 /// let ultimate = Rest::new("192.168.1.10");
 /// ultimate.reset();
@@ -53,6 +56,7 @@ impl Rest {
     /// Create new Rest instance
     ///
     /// # Arguments
+    ///
     /// * `host` - Hostname or IP address of Ultimate-64 of Ultimate-II
     pub fn new(host: &str) -> Self {
         Self {
