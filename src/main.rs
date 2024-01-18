@@ -177,7 +177,7 @@ fn do_main() -> Result<()> {
                 std::fs::write(outfile.unwrap(), &data)?;
             } else {
                 data.iter().for_each(|byte| {
-                    print!("0x{:02x} ", byte);
+                    print!("{:#04x} ", byte);
                 });
                 println!()
             }

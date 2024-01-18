@@ -126,7 +126,7 @@ impl Rest {
 
     /// Write data to memory using a POST request
     pub fn write_mem(&self, address: u16, data: &[u8]) -> Result<()> {
-        debug!("Write {} bytes to 0x{:#x}", data.len(), address);
+        debug!("Write {} bytes to {:#06x}", data.len(), address);
         aux::check_address_overflow(address, data.len() as u16)?;
         let url = format!("{}/machine:writemem?address={:x}", self.url_pfx, address);
         self.client.post(url).body(data.to_vec()).send()?;
@@ -135,7 +135,7 @@ impl Rest {
 
     /// Read `length` bytes from `address`
     pub fn read_mem(&self, address: u16, length: u16) -> Result<Vec<u8>> {
-        debug!("Read {} bytes from 0x{:#x}", length, address);
+        debug!("Read {} bytes from {:#06x}", length, address);
         aux::check_address_overflow(address, length)?;
         let url = format!(
             "{}/machine:readmem?address={:x}&length={}",
@@ -171,7 +171,7 @@ impl Rest {
             Some(address) => self.write_mem(address, data),
             None => {
                 let load_address = aux::extract_load_address(data)?;
-                debug!("Detected load address: 0x{:#x}", load_address);
+                debug!("Detected load address: {:#06x}", load_address);
                 self.write_mem(load_address, &data[2..]) // skip first two bytes
             }
         }
