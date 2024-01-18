@@ -103,12 +103,14 @@ impl Rest {
         self.put("machine:reboot")?;
         Ok(())
     }
+
     /// Pause machine
     pub fn pause(&self) -> Result<()> {
         debug!("Pause machine");
         self.put("machine:pause")?;
         Ok(())
     }
+
     /// Resume machine
     pub fn resume(&self) -> Result<()> {
         debug!("Resume machine");
@@ -190,8 +192,6 @@ impl Rest {
         );
         let file = std::fs::File::open(path)?;
         self.client.post(url).body(file).send()?;
-        Err(anyhow::anyhow!(
-            "Disk mounting is unfinished and currently doesn't work"
-        ))
+        todo!("Disk image mounting is unfinished")
     }
 }

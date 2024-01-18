@@ -70,7 +70,7 @@ enum Commands {
         /// MOD file
         file: std::ffi::OsString,
     },
-    /// Disk image operations
+    /// Disk image operations (experimental)
     Image {
         #[clap(subcommand)]
         command: DiskImageCmd,
