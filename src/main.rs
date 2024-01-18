@@ -57,6 +57,7 @@ enum DiskImageCmd {
         file: std::ffi::OsString,
         /// Drive number
         #[clap(long, short = 'i', default_value = "8")]
+        #[arg(value_parser = parse::<u8>)]
         drive_id: u8,
         /// Mount mode
         #[clap(long, short = 'm', default_value = "ro")]
@@ -75,7 +76,8 @@ enum Commands {
         file: std::ffi::OsString,
         /// Load address; otherwise deduce from first two bytes in file
         #[clap(long, short = '@', default_value = None)]
-        address: Option<String>,
+        #[arg(value_parser = parse::<u16>)]
+        address: Option<u16>,
     },
     /// Play Amiga MOD file
     Modplay {
@@ -92,9 +94,11 @@ enum Commands {
     /// Read memory
     Peek {
         /// Address to read from, e.g. `4096` or `0x1000`
-        address: String,
+        #[arg(value_parser = parse::<u16>)]
+        address: u16,
         /// Number of bytes to read
         #[clap(long, short = 'n', default_value = "1")]
+        #[arg(value_parser = parse::<u16>)]
         length: u16,
         /// Write to binary file instead of hexdump
         #[clap(long, short = 'o')]
@@ -106,9 +110,10 @@ enum Commands {
     /// Write single byte to memory
     Poke {
         /// Address to write to, e.g. `4096` or `0x1000`
-        address: String,
+        #[arg(value_parser = parse::<u16>)]
+        address: u16,
         /// Value to write, e.g. `16`, `0x10` or `0b0001_0000`
-        #[arg(value_parser = parse_u8)]
+        #[arg(value_parser = parse::<u8>)]
         value: u8,
     },
     /// Power off machine
@@ -131,13 +136,11 @@ enum Commands {
         file: std::ffi::OsString,
         /// Optional song number
         #[clap(short = 'n')]
+        #[arg(value_parser = parse::<u8>)]
         songnr: Option<u8>,
     },
 }
 
-fn parse_u8(arg: &str) -> Result<u8, std::num::ParseIntError> {
-    parse::<u8>(arg)
-}
 /// Disassemble `length` bytes from memory, starting at `address`
 /// # Panics
 /// Panics if the disassembler fails to disassemble the bytes
@@ -172,10 +175,9 @@ fn do_main() -> Result<()> {
             outfile,
             disassemble,
         } => {
-            let _address = parse::<u16>(&address)?;
-            let data = ultimate.read_mem(_address, length)?;
+            let data = ultimate.read_mem(address, length)?;
             if disassemble {
-                print_disassembled(&data, _address)?;
+                print_disassembled(&data, address)?;
             } else if outfile.is_some() {
                 std::fs::write(outfile.unwrap(), &data)?;
             } else {
@@ -183,8 +185,7 @@ fn do_main() -> Result<()> {
             }
         }
         Commands::Poke { address, value } => {
-            let _address = parse::<u16>(&address)?;
-            ultimate.write_mem(_address, &[value])?;
+            ultimate.write_mem(address, &[value])?;
         }
         Commands::Reboot => {
             ultimate.reboot()?;
@@ -211,12 +212,8 @@ fn do_main() -> Result<()> {
             ultimate.mod_play(&data)?;
         }
         Commands::Load { file, address } => {
-            let address_int = match address {
-                Some(address) => Some(parse::<u16>(&address)?),
-                None => None,
-            };
             let data = std::fs::read(file)?;
-            ultimate.load_data(&data, address_int)?;
+            ultimate.load_data(&data, address)?;
         }
         Commands::Image { command } => match command {
             DiskImageCmd::Mount {
