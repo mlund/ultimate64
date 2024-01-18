@@ -23,18 +23,6 @@ pub fn check_address_overflow(address: u16, length: u16) -> Result<()> {
     } else {
         Ok(())
     }
-
-    // if length == 0 {
-    //     return Ok(());
-    // }
-    // u16::checked_add(address, length - 1).ok_or_else(|| {
-    //     anyhow::anyhow!(
-    //         "Address {:#x} + length {:#x} overflows address space",
-    //         address,
-    //         length
-    //     )
-    // })?;
-    // Ok(())
 }
 
 /// Helper function to extract file extension from `path` to a lowercase string.
