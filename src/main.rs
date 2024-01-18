@@ -190,7 +190,10 @@ fn do_main() -> Result<()> {
             } else if outfile.is_some() {
                 std::fs::write(outfile.unwrap(), &data)?;
             } else {
-                println!("{:x?}", data);
+                data.iter().for_each(|byte| {
+                    print!("0x{:02x} ", byte);
+                });
+                println!()
             }
         }
         Commands::Poke {
