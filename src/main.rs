@@ -115,6 +115,15 @@ enum Commands {
         /// Value to write, e.g. `16`, `0x10` or `0b0001_0000`
         #[arg(value_parser = parse::<u8>)]
         value: u8,
+        /// Bitwise AND with existing value
+        #[clap(long = "and", action, conflicts_with = "bitwise_or")]
+        bitwise_and: bool,
+        /// Bitwise OR with existing value
+        #[clap(long = "or", action, conflicts_with = "bitwise_and")]
+        bitwise_or: bool,
+        /// Bitwise XOR with existing value
+        #[clap(long = "xor", action, conflicts_with = "bitwise_and")]
+        bitwise_xor: bool,
     },
     /// Power off machine
     Poweroff,
@@ -184,7 +193,22 @@ fn do_main() -> Result<()> {
                 println!("{:x?}", data);
             }
         }
-        Commands::Poke { address, value } => {
+        Commands::Poke {
+            address,
+            value,
+            bitwise_and,
+            bitwise_or,
+            bitwise_xor,
+        } => {
+            let value = if bitwise_and {
+                ultimate.read_mem(address, 1)?[0] & value
+            } else if bitwise_or {
+                ultimate.read_mem(address, 1)?[0] | value
+            } else if bitwise_xor {
+                ultimate.read_mem(address, 1)?[0] ^ value
+            } else {
+                value
+            };
             ultimate.write_mem(address, &[value])?;
         }
         Commands::Reboot => {
