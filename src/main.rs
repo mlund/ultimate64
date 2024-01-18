@@ -108,14 +108,18 @@ enum Commands {
         #[arg(value_parser = parse::<u8>)]
         value: u8,
         /// Bitwise AND with existing value
-        #[clap(long = "and", action, conflicts_with = "bitwise_or")]
+        #[clap(long = "and", action, conflicts_with_all = ["bitwise_or", "bitwise_xor"])]
         bitwise_and: bool,
         /// Bitwise OR with existing value
-        #[clap(long = "or", action, conflicts_with = "bitwise_and")]
+        #[clap(long = "or", action, conflicts_with_all = ["bitwise_and", "bitwise_xor"])]
         bitwise_or: bool,
         /// Bitwise XOR with existing value
-        #[clap(long = "xor", action, conflicts_with = "bitwise_and")]
+        #[clap(long = "xor", action, conflicts_with_all = ["bitwise_and", "bitwise_or"])]
         bitwise_xor: bool,
+        #[clap(long, short = 'f', conflicts_with_all = ["bitwise_and", "bitwise_or", "bitwise_xor"])]
+        #[arg(value_parser = parse::<u16>)]
+        /// Fill n bytes with value
+        fill: Option<u16>,
     },
     /// Power off machine
     Poweroff,
@@ -199,7 +203,20 @@ fn do_main() -> Result<()> {
             bitwise_and,
             bitwise_or,
             bitwise_xor,
+            fill,
         } => {
+            if fill.is_some() && fill.unwrap() > 0 {
+                let fill = fill.unwrap();
+                let data = vec![value; fill as usize];
+                ultimate.write_mem(address, &data)?;
+                debug!(
+                    "Filled [{:#06x}-{:#06x}] with {:#04x}",
+                    address,
+                    address + fill - 1,
+                    value
+                );
+                return Ok(());
+            }
             let value = if bitwise_and {
                 ultimate.read_mem(address, 1)?[0] & value
             } else if bitwise_or {
