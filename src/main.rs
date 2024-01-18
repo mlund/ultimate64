@@ -1,9 +1,12 @@
 use anyhow::Result;
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{Parser, Subcommand};
+use log::debug;
 use parse_int::parse;
 use ultimate64::aux;
 use ultimate64::{drives, Rest};
+extern crate pretty_env_logger;
+use pretty_env_logger::env_logger::DEFAULT_FILTER_ENV;
 
 // Clap 4 colors: https://github.com/clap-rs/clap/issues/3234#issuecomment-1783820412
 fn styles() -> Styles {
@@ -33,6 +36,9 @@ struct Cli {
     /// Subcommand to run
     #[command(subcommand)]
     command: Commands,
+    /// Verbose output. See more with e.g. RUST_LOG=Trace
+    #[clap(long, short = 'v', action)]
+    pub verbose: bool,
 }
 
 #[derive(Debug, Subcommand)]
@@ -153,6 +159,11 @@ fn do_main() -> Result<()> {
     let args = Cli::parse();
     let ultimate = Rest::new(&args.host);
 
+    if args.verbose && std::env::var(DEFAULT_FILTER_ENV).is_err() {
+        std::env::set_var(DEFAULT_FILTER_ENV, "Debug");
+    }
+    pretty_env_logger::init();
+
     match args.command {
         Commands::Drives => {
             let drives = ultimate.drives()?;
@@ -198,6 +209,7 @@ fn do_main() -> Result<()> {
             } else {
                 value
             };
+            debug!("Poke {:#04x} to {:#06x}", value, address);
             ultimate.write_mem(address, &[value])?;
         }
         Commands::Reboot => {

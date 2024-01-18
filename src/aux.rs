@@ -3,6 +3,7 @@
 //!
 
 use anyhow::Result;
+use log::debug;
 
 /// Check if 16-bit start address can contain `length` bytes
 ///
@@ -23,18 +24,6 @@ pub fn check_address_overflow(address: u16, length: u16) -> Result<()> {
     } else {
         Ok(())
     }
-
-    // if length == 0 {
-    //     return Ok(());
-    // }
-    // u16::checked_add(address, length - 1).ok_or_else(|| {
-    //     anyhow::anyhow!(
-    //         "Address {:#x} + length {:#x} overflows address space",
-    //         address,
-    //         length
-    //     )
-    // })?;
-    // Ok(())
 }
 
 /// Helper function to extract file extension from `path` to a lowercase string.
@@ -43,7 +32,7 @@ pub fn check_address_overflow(address: u16, length: u16) -> Result<()> {
 /// # Examples
 /// ```
 /// use ultimate64::aux::get_extension;
-/// let path = std::ffi::OsString::from("foo.bar");
+/// let path = std::ffi::OsString::from("foo.bAR");
 /// let ext = get_extension(&path).unwrap();
 /// assert_eq!(ext, "bar");
 /// ```
@@ -69,6 +58,8 @@ pub fn extract_load_address(data: &[u8]) -> Result<u16> {
             "Data must be two or more bytes to detect load address"
         ))
     } else {
-        Ok(u16::from_le_bytes([data[0], data[1]]))
+        let load_address = u16::from_le_bytes([data[0], data[1]]);
+        debug!("Detected load address: {:#06x}", load_address);
+        Ok(load_address)
     }
 }

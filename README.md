@@ -38,7 +38,7 @@ ultimate64 run skate_or_die.prg              # load and run PRG file
 ultimate64 load sprites.dat --address 0x2000 # load data to memory
 ultimate65 peek 0x1000 --dasm -n 32          # disassemble memory
 ultimate65 poke 0xd020 3                     # write single byte
-ultimate65 poke 0xd016 0b0000_1100 --xor     # bitwise operations
+ultimate65 poke 4096 --xor 0b0000_1100       # bitwise operations
 ultimate64 sidplay yie_ar_kung_fu.sid -n 2   # play SID tune
 ultimate64 modplay enigma.mod                # play Amiga MOD tune
 ~~~
@@ -50,10 +50,10 @@ Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
 - [x] Compiled, small, and cross platform with no external dependencies
 - [x] Can be used either as a CLI tool or as a library
 - [x] Modern CLI with subcommands
-- [x] World class memory safety due to Rust
-- [x] Excellent error handling and error messages
-- [x] Convenient decimal, hexadecimal and binary input
-- [x] Bitwise operations for POKE
+- [x] First class memory safety due to Rust
+- [x] Excellent error handling; error messages; and input validation
+- [x] Convenient decimal, hexadecimal, and binary input
+- [x] Bitwise operations for memory manipulation
 - [x] 6502 disassembly
 - [x] Load address detection
 - [x] Precompiled binaries for MacOS, Linux, and Windows
@@ -62,3 +62,4 @@ Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
 
 - [ ] Disk image and file manipulation
 - [ ] Memory bank switching for RAM access
+- [ ] Ultimate configuration handling
