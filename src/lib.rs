@@ -5,7 +5,7 @@
 //!
 
 use anyhow::{Ok, Result};
-use log::debug;
+use log::{debug, warn};
 
 pub mod aux;
 pub mod drives;
@@ -129,6 +129,9 @@ impl Rest {
     /// Write data to memory using a POST request
     pub fn write_mem(&self, address: u16, data: &[u8]) -> Result<()> {
         aux::check_address_overflow(address, data.len() as u16)?;
+        if matches!(address, 0 | 1) {
+            warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
+        }
         let url = format!("{}/machine:writemem?address={:x}", self.url_pfx, address);
         self.client.post(url).body(data.to_vec()).send()?;
         debug!("Wrote {} byte(s) to {:#06x}", data.len(), address);
@@ -138,12 +141,14 @@ impl Rest {
     /// Read `length` bytes from `address`
     pub fn read_mem(&self, address: u16, length: u16) -> Result<Vec<u8>> {
         aux::check_address_overflow(address, length)?;
+        if matches!(address, 0 | 1) {
+            warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
+        }
         let url = format!(
             "{}/machine:readmem?address={:x}&length={}",
             self.url_pfx, address, length
         );
-        let response = self.client.get(url).send()?;
-        let bytes = response.bytes()?.to_vec();
+        let bytes = self.client.get(url).send()?.bytes()?.to_vec();
         debug!("Read {} bytes from {:#06x}", length, address);
         Ok(bytes)
     }

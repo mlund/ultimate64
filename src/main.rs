@@ -165,6 +165,8 @@ fn do_main() -> Result<()> {
 
     if args.verbose && std::env::var(DEFAULT_FILTER_ENV).is_err() {
         std::env::set_var(DEFAULT_FILTER_ENV, "Debug");
+    } else {
+        std::env::set_var(DEFAULT_FILTER_ENV, "Warn");
     }
     pretty_env_logger::init();
 
