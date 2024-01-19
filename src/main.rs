@@ -36,7 +36,7 @@ struct Cli {
     /// Subcommand to run
     #[command(subcommand)]
     command: Commands,
-    /// Verbose output. See more with e.g. RUST_LOG=Trace
+    /// Verbose output
     #[clap(long, short = 'v', action)]
     pub verbose: bool,
 }
@@ -166,7 +166,7 @@ fn do_main() -> Result<()> {
     if args.verbose && std::env::var(DEFAULT_FILTER_ENV).is_err() {
         std::env::set_var(DEFAULT_FILTER_ENV, "Debug");
     } else {
-        std::env::set_var(DEFAULT_FILTER_ENV, "Warn");
+        std::env::set_var(DEFAULT_FILTER_ENV, "Info");
     }
     pretty_env_logger::init();
 

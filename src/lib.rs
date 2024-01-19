@@ -149,7 +149,7 @@ impl Rest {
             self.url_pfx, address, length
         );
         let bytes = self.client.get(url).send()?.bytes()?.to_vec();
-        debug!("Read {} bytes from {:#06x}", length, address);
+        debug!("Read {} byte(s) from {:#06x}", length, address);
         Ok(bytes)
     }
 
