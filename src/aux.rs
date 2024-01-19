@@ -3,7 +3,6 @@
 //!
 
 use anyhow::Result;
-use log::debug;
 
 /// Check if 16-bit start address can contain `length` bytes
 ///
@@ -49,17 +48,13 @@ pub fn get_extension(path: &std::ffi::OsString) -> Option<String> {
 /// ```
 /// use ultimate64::aux::extract_load_address;
 /// let data = vec![0x01, 0x08, 0x00, 0x00];
-/// let load_address = extract_load_address(&data).unwrap();
-/// assert_eq!(load_address, 0x0801);
+/// let addr = extract_load_address(&data).unwrap();
+/// assert_eq!(addr, 0x0801);
+/// let data = vec![0x01];
+/// assert!(extract_load_address(&data).is_err());
 /// ```
 pub fn extract_load_address(data: &[u8]) -> Result<u16> {
-    if data.len() < 2 {
-        Err(anyhow::anyhow!(
-            "Data must be two or more bytes to detect load address"
-        ))
-    } else {
-        let load_address = u16::from_le_bytes([data[0], data[1]]);
-        debug!("Detected load address: {:#06x}", load_address);
-        Ok(load_address)
-    }
+    data.get(..2)
+        .ok_or_else(|| anyhow::anyhow!("Data must be two or more bytes to detect load address"))
+        .map(|b| u16::from_le_bytes(b.try_into().unwrap()))
 }
