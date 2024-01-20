@@ -30,6 +30,8 @@ log = "0.4"
 pretty_env_logger = "0.5"
 
 [profile.release]
-strip = true    # Automatically strip symbols from the binary.
-opt-level = "z" # Optimize for size.
-lto = true      # Link-time optimization
+strip = true      # Automatically strip symbols from the binary.
+opt-level = "z"   # Optimize for size.
+lto = true        # Link-time optimization.
+codegen-units = 1 # Compile the entire crate as a single unit.
+panic = "abort"   # Abort on panic.

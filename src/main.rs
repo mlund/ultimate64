@@ -30,7 +30,7 @@ fn has_disk_image_extension(file: &std::ffi::OsString) -> Result<()> {
 #[command(color = clap::ColorChoice::Auto)]
 #[command(styles=styles())]
 struct Cli {
-    /// Network address of Ultimate64.
+    /// Network address of ultimate device
     #[clap(env = "ULTIMATE_HOST")]
     host: String,
     /// Subcommand to run
