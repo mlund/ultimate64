@@ -36,10 +36,10 @@ ultimate64 --help                            # show available commands
 ultimate64 pause                             # pause machine
 ultimate64 run skate_or_die.prg              # load and run PRG file
 ultimate64 load sprites.dat --address 0x2000 # load data to memory
-ultimate65 peek 0x1000 --dasm -n 32          # disassemble memory
-ultimate65 poke 0xd020 3                     # write single byte
-ultimate65 poke 4096 --xor 0b0000_1100       # bitwise manipulation
-ultimate65 poke 0x0400 0x20 --fill 1000      # fill memory
+ultimate64 peek 0x1000 --dasm -n 32          # disassemble memory
+ultimate64 poke 0xd020 3                     # write single byte
+ultimate64 poke 4096 --xor 0b0000_1100       # bitwise manipulation
+ultimate64 poke 0x0400 0x20 --fill 1000      # fill memory
 ultimate64 sidplay yie_ar_kung_fu.sid -n 2   # play SID tune
 ultimate64 modplay enigma.mod                # play Amiga MOD tune
 ~~~
