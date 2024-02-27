@@ -32,7 +32,7 @@ fn has_disk_image_extension<P: AsRef<Path>>(file: P) -> Result<()> {
 #[command(color = clap::ColorChoice::Auto)]
 #[command(styles=styles())]
 struct Cli {
-    /// Network address of ultimate device
+    /// IP address or hostname of ultimate device
     #[clap(env = "ULTIMATE_HOST")]
     #[arg(value_parser = Host::parse)]
     host: Host,
