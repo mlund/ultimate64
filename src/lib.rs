@@ -35,10 +35,10 @@ impl Rest {
     /// # Arguments
     ///
     /// * `host` - Hostname or IP address of Ultimate-64 of Ultimate-II
-    pub fn new(host: &str) -> Self {
+    pub fn new(host: &Host) -> Self {
         Self {
             client: reqwest::blocking::Client::new(),
-            url_pfx: format!("http://{}/v1", Host::parse(host).unwrap()),
+            url_pfx: format!("http://{}/v1", host),
         }
     }
 

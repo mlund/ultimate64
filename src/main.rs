@@ -8,6 +8,7 @@ use ultimate64::{drives, Rest};
 extern crate pretty_env_logger;
 use pretty_env_logger::env_logger::DEFAULT_FILTER_ENV;
 use std::path::{Path, PathBuf};
+use url::Host;
 
 // Clap 4 colors: https://github.com/clap-rs/clap/issues/3234#issuecomment-1783820412
 fn styles() -> Styles {
@@ -33,7 +34,8 @@ fn has_disk_image_extension<P: AsRef<Path>>(file: P) -> Result<()> {
 struct Cli {
     /// Network address of ultimate device
     #[clap(env = "ULTIMATE_HOST")]
-    host: String,
+    #[arg(value_parser = Host::parse)]
+    host: Host,
     /// Subcommand to run
     #[command(subcommand)]
     command: Commands,
