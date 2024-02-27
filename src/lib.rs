@@ -7,6 +7,7 @@
 use anyhow::{Ok, Result};
 use log::{debug, warn};
 use std::path::Path;
+use url::Host;
 
 pub mod aux;
 pub mod drives;
@@ -37,7 +38,7 @@ impl Rest {
     pub fn new(host: &str) -> Self {
         Self {
             client: reqwest::blocking::Client::new(),
-            url_pfx: format!("http://{}/v1", host),
+            url_pfx: format!("http://{}/v1", Host::parse(host).unwrap()),
         }
     }
 
