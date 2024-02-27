@@ -7,6 +7,7 @@ use ultimate64::aux;
 use ultimate64::{drives, Rest};
 extern crate pretty_env_logger;
 use pretty_env_logger::env_logger::DEFAULT_FILTER_ENV;
+use std::path::{Path, PathBuf};
 
 // Clap 4 colors: https://github.com/clap-rs/clap/issues/3234#issuecomment-1783820412
 fn styles() -> Styles {
@@ -18,7 +19,7 @@ fn styles() -> Styles {
 }
 
 /// Helper function to determine if file has a disk image extension
-fn has_disk_image_extension(file: &std::ffi::OsString) -> Result<()> {
+fn has_disk_image_extension<P: AsRef<Path>>(file: P) -> Result<()> {
     drives::DiskImageType::from_file_name(file).map(|_| ())
 }
 
@@ -46,7 +47,7 @@ enum DiskImageCmd {
     /// Mount disk image (unfinished)
     Mount {
         /// Image file
-        file: std::ffi::OsString,
+        file: PathBuf,
         /// Drive number
         #[clap(long, short = 'i', default_value = "8")]
         #[arg(value_parser = parse::<u8>)]
@@ -70,7 +71,7 @@ enum Commands {
     /// Load file into memory
     Load {
         /// File to load
-        file: std::ffi::OsString,
+        file: PathBuf,
         /// Load address; otherwise deduce from first two bytes in file
         #[clap(long, short = '@', default_value = None)]
         #[arg(value_parser = parse::<u16>)]
@@ -79,7 +80,7 @@ enum Commands {
     /// Play Amiga MOD file
     Modplay {
         /// MOD file
-        file: std::ffi::OsString,
+        file: PathBuf,
     },
     /// Pause machine
     Pause,
@@ -94,7 +95,7 @@ enum Commands {
         length: u16,
         /// Write to binary file instead of hexdump
         #[clap(long, short = 'o')]
-        outfile: Option<std::ffi::OsString>,
+        outfile: Option<PathBuf>,
         /// Disassemble instead of hexdump
         #[clap(long = "dasm", short = 'd', action, conflicts_with = "outfile")]
         disassemble: bool,
@@ -133,12 +134,12 @@ enum Commands {
     #[command(arg_required_else_help = true)]
     Run {
         /// PRG or CRT file to load and run
-        file: std::ffi::OsString,
+        file: PathBuf,
     },
     /// Play SID file
     Sidplay {
         /// SID file
-        file: std::ffi::OsString,
+        file: PathBuf,
         /// Optional song number
         #[clap(short = 'n')]
         #[arg(value_parser = parse::<u8>)]
