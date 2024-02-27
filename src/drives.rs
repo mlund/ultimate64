@@ -4,6 +4,7 @@ use crate::aux;
 use anyhow::Result;
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 /// Disk drive types
 #[derive(Serialize, Deserialize, Debug, Clone, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
@@ -33,7 +34,7 @@ pub enum DiskImageType {
 
 impl DiskImageType {
     /// New disk image type from file name
-    pub fn from_file_name(path: &std::ffi::OsString) -> Result<Self> {
+    pub fn from_file_name<T: AsRef<Path>>(path: T) -> Result<Self> {
         let ext = aux::get_extension(path).unwrap_or_default();
         match ext.as_str() {
             "d64" => Ok(Self::D64),

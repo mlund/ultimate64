@@ -3,6 +3,7 @@
 //!
 
 use anyhow::Result;
+use std::path::Path;
 
 /// Check if 16-bit start address can contain `length` bytes
 ///
@@ -35,8 +36,8 @@ pub fn check_address_overflow(address: u16, length: u16) -> Result<()> {
 /// let ext = get_extension(&path).unwrap();
 /// assert_eq!(ext, "bar");
 /// ```
-pub fn get_extension(path: &std::ffi::OsString) -> Option<String> {
-    std::path::Path::new(&path)
+pub fn get_extension<P: AsRef<Path>>(path: P) -> Option<String> {
+    path.as_ref()
         .extension()
         .and_then(std::ffi::OsStr::to_str)
         .map(|s| s.to_lowercase())

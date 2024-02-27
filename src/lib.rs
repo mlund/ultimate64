@@ -6,6 +6,7 @@
 
 use anyhow::{Ok, Result};
 use log::{debug, warn};
+use std::path::Path;
 
 pub mod aux;
 pub mod drives;
@@ -184,9 +185,9 @@ impl Rest {
     }
 
     /// Mount disk image
-    pub fn mount_disk_image(
+    pub fn mount_disk_image<P: AsRef<Path>>(
         &self,
-        path: &std::ffi::OsStr,
+        path: P,
         drive_id: u8,
         mount_mode: drives::MountMode,
     ) -> Result<()> {
