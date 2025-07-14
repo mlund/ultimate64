@@ -4,11 +4,11 @@
 //! [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html).
 //!
 
-use crate::drives::DiskImageType;
+use crate::drives::{DiskImageType, Drive, DriveList};
 use anyhow::{anyhow, bail, Ok, Result};
 use log::{debug, warn};
 use reqwest::blocking::Client;
-use std::path::Path;
+use std::{collections::HashMap, path::Path};
 use url::Host;
 
 pub mod aux;
@@ -187,6 +187,19 @@ impl Rest {
         }
     }
 
+    /// Get drive list
+    pub fn drive_list(&self) -> Result<HashMap<String, Drive>> {
+        let url = format!("{}/drives", self.url_pfx);
+        let response = self.client.get(url).send()?;
+        let nested: DriveList = response.json()?;
+        let drives = nested
+            .drives
+            .iter()
+            .flat_map(|m| m.iter().map(|(name, drive)| (name.clone(), drive.clone())))
+            .collect();
+        Ok(drives)
+    }
+
     /// Mount disk image
     ///
     /// Curl equivalent:
@@ -194,11 +207,11 @@ impl Rest {
     pub fn mount_disk_image<P: AsRef<Path>>(
         &self,
         path: P,
-        _drive_id: u8,
+        drive_id: String,
         mount_mode: drives::MountMode,
     ) -> Result<()> {
         let disktype = DiskImageType::from_file_name(&path)?;
-        let url = format!("{}/drives/{}:mount", self.url_pfx, "a");
+        let url = format!("{}/drives/{drive_id}:mount", self.url_pfx);
         let form = reqwest::blocking::multipart::Form::new()
             .file("file", path)
             .map_err(|e| anyhow!("disk image error: {e}"))?

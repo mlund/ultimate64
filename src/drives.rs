@@ -4,7 +4,7 @@ use crate::aux;
 use anyhow::{bail, Result};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
-use std::{fmt::Display, path::Path};
+use std::{collections::HashMap, fmt::Display, path::Path};
 
 /// Disk drive types
 #[derive(Serialize, Deserialize, Debug, Clone, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
@@ -15,6 +15,20 @@ pub enum DriveType {
     CBM1571,
     #[serde(rename = "1581")]
     CBM1581,
+    #[serde(rename = "DOS emulation")]
+    DOS,
+}
+
+impl Display for DriveType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            DriveType::CBM1541 => "1541",
+            DriveType::CBM1571 => "1571",
+            DriveType::CBM1581 => "1581",
+            DriveType::DOS => "DOS emulation",
+        };
+        write!(f, "{s}")
+    }
 }
 
 /// Disk image types
@@ -70,7 +84,7 @@ pub enum MountMode {
     #[clap(name = "ro")]
     ReadOnly,
     /// Unlinked
-    #[clap(name = "unlinked")]
+    #[clap(name = "ul")]
     Unlinked,
 }
 
@@ -100,7 +114,7 @@ impl Display for MountMode {
 }
 
 /// Drive description
-#[derive(Serialize, Deserialize, Debug, Default, Clone)]
+#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq)]
 pub struct Drive {
     /// Bus ID
     pub bus_id: u8,
@@ -117,4 +131,11 @@ pub struct Drive {
     pub image_file: Option<String>,
     /// Image path
     pub image_path: Option<String>,
+}
+
+/// Structure to handle raw drive list from Ultimate
+#[derive(Serialize, Deserialize, Debug, Default, Clone, PartialEq)]
+pub struct DriveList {
+    /// List of drives
+    pub drives: Vec<HashMap<String, Drive>>,
 }

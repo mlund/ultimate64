@@ -4,9 +4,12 @@ use clap::{Parser, Subcommand};
 use log::debug;
 use parse_int::parse;
 use ultimate64::aux;
+use ultimate64::drives::Drive;
 use ultimate64::{drives, Rest};
 extern crate pretty_env_logger;
 use pretty_env_logger::env_logger::DEFAULT_FILTER_ENV;
+use prettytable::{format, Cell, Row, Table};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use url::Host;
 
@@ -45,31 +48,9 @@ struct Cli {
 }
 
 #[derive(Debug, Subcommand)]
-enum DiskImageCmd {
-    /// Mount disk image (unfinished)
-    Mount {
-        /// Image file
-        file: PathBuf,
-        /// Drive number
-        #[clap(long, short = 'i', default_value = "8")]
-        #[arg(value_parser = parse::<u8>)]
-        drive_id: u8,
-        /// Mount mode
-        #[clap(long, short = 'm', default_value = "ro")]
-        #[arg(value_enum)]
-        mode: drives::MountMode,
-    },
-}
-
-#[derive(Debug, Subcommand)]
 enum Commands {
     /// Show drive information
     Drives,
-    /// Disk image operations (experimental)
-    Image {
-        #[clap(subcommand)]
-        command: DiskImageCmd,
-    },
     /// Load file into memory
     Load {
         /// File to load
@@ -84,6 +65,19 @@ enum Commands {
         /// MOD file
         file: PathBuf,
     },
+    /// Mount disk image
+    Mount {
+        /// Image file
+        file: PathBuf,
+        /// Drive number
+        #[clap(long, short = 'd', default_value = "a")]
+        drive: String,
+        /// Mount mode
+        #[clap(long, short = 'm', default_value = "ro")]
+        #[arg(value_enum)]
+        mode: drives::MountMode,
+    },
+
     /// Pause machine
     Pause,
     /// Read memory
@@ -175,8 +169,8 @@ fn do_main() -> Result<()> {
 
     match args.command {
         Commands::Drives => {
-            let drives = ultimate.drives()?;
-            println!("{drives}");
+            let drives = ultimate.drive_list()?;
+            print_drive_table(drives);
         }
         Commands::Pause => {
             ultimate.pause()?;
@@ -258,22 +252,49 @@ fn do_main() -> Result<()> {
             let data = std::fs::read(file)?;
             ultimate.mod_play(&data)?;
         }
+        Commands::Mount {
+            file,
+            drive: drive_id,
+            mode,
+        } => {
+            has_disk_image_extension(&file)?;
+            ultimate.mount_disk_image(&file, drive_id, mode)?;
+        }
         Commands::Load { file, address } => {
             let data = std::fs::read(file)?;
             ultimate.load_data(&data, address)?;
         }
-        Commands::Image { command } => match command {
-            DiskImageCmd::Mount {
-                file,
-                drive_id,
-                mode,
-            } => {
-                has_disk_image_extension(&file)?;
-                ultimate.mount_disk_image(&file, drive_id, mode)?;
-            }
-        },
     }
     Ok(())
+}
+
+fn print_drive_table(drives: HashMap<String, Drive>) {
+    let mut table = Table::new();
+    table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+
+    table.set_titles(Row::new(vec![
+        Cell::new("Drive"),
+        Cell::new("Id"),
+        Cell::new("Type"),
+        Cell::new("Enabled"),
+        Cell::new("Image file"),
+    ]));
+
+    for (name, drive) in drives {
+        table.add_row(Row::new(vec![
+            Cell::new(&name),
+            Cell::new(&drive.bus_id.to_string()),
+            Cell::new(
+                &drive
+                    .drive_type
+                    .map_or("Unknown".to_string(), |t| t.to_string()),
+            ),
+            Cell::new(&drive.enabled.to_string()),
+            Cell::new(drive.image_file.as_deref().unwrap_or("")),
+        ]));
+    }
+
+    table.printstd();
 }
 
 fn main() {
