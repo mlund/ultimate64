@@ -1,7 +1,7 @@
 //! # Disk drive and disk image manipulation
 
 use crate::aux;
-use anyhow::Result;
+use anyhow::{bail, Result};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Display, path::Path};
@@ -42,32 +42,21 @@ impl DiskImageType {
             "d71" => Ok(Self::D71),
             "g71" => Ok(Self::G71),
             "d81" => Ok(Self::D81),
-            _ => Err(anyhow::anyhow!(
-                "File extension must be one of: d64, d71, d81, g64, g71"
-            )),
-        }
-    }
-    /// Get file extension for disk image type
-    pub fn extension(&self) -> String {
-        match self {
-            Self::D64 => "d64".to_string(),
-            Self::G64 => "g64".to_string(),
-            Self::D71 => "d71".to_string(),
-            Self::G71 => "g71".to_string(),
-            Self::D81 => "d81".to_string(),
+            _ => bail!("File extension must be one of: d64, d71, d81, g64, g71"),
         }
     }
 }
 
-impl From<DiskImageType> for String {
-    fn from(d: DiskImageType) -> Self {
-        match d {
-            DiskImageType::D64 => "d64".to_string(),
-            DiskImageType::G64 => "g64".to_string(),
-            DiskImageType::D71 => "d71".to_string(),
-            DiskImageType::G71 => "g71".to_string(),
-            DiskImageType::D81 => "d81".to_string(),
-        }
+impl Display for DiskImageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            DiskImageType::D64 => "d64",
+            DiskImageType::G64 => "g64",
+            DiskImageType::D71 => "d71",
+            DiskImageType::G71 => "g71",
+            DiskImageType::D81 => "d81",
+        };
+        write!(f, "{s}")
     }
 }
 
@@ -88,10 +77,11 @@ pub enum MountMode {
 impl TryFrom<&str> for MountMode {
     type Error = String;
     fn try_from(s: &str) -> Result<Self, Self::Error> {
+        use MountMode::*;
         match s {
-            "rw" => Ok(MountMode::ReadWrite),
-            "ro" => Ok(MountMode::ReadOnly),
-            "unlinked" => Ok(MountMode::Unlinked),
+            "readwrite" => Ok(ReadWrite),
+            "readonly" => Ok(ReadOnly),
+            "unlinked" => Ok(Unlinked),
             _ => Err(format!("Unknown mount mode: {s}")),
         }
     }
@@ -99,10 +89,11 @@ impl TryFrom<&str> for MountMode {
 
 impl Display for MountMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use MountMode::*;
         let s = match self {
-            MountMode::ReadWrite => "rw",
-            MountMode::ReadOnly => "ro",
-            MountMode::Unlinked => "unlinked",
+            ReadWrite => "readwrite",
+            ReadOnly => "readonly",
+            Unlinked => "unlinked",
         };
         write!(f, "{s}")
     }

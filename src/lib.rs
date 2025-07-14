@@ -4,8 +4,10 @@
 //! [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html).
 //!
 
-use anyhow::{Ok, Result};
+use crate::drives::DiskImageType;
+use anyhow::{anyhow, bail, Ok, Result};
 use log::{debug, warn};
+use reqwest::blocking::Client;
 use std::path::Path;
 use url::Host;
 
@@ -24,7 +26,7 @@ pub mod drives;
 #[derive(Debug)]
 pub struct Rest {
     /// HTTP client
-    client: reqwest::blocking::Client,
+    client: Client,
     /// Header
     url_pfx: String,
 }
@@ -37,7 +39,7 @@ impl Rest {
     /// * `host` - Hostname or IP address of Ultimate-64 of Ultimate-II
     pub fn new(host: &Host) -> Self {
         Self {
-            client: reqwest::blocking::Client::new(),
+            client: Client::new(),
             url_pfx: format!("http://{host}/v1"),
         }
     }
@@ -186,18 +188,30 @@ impl Rest {
     }
 
     /// Mount disk image
+    ///
+    /// Curl equivalent:
+    /// `curl -X POST 192.168.68.81/v1/drives/a:mount -F "file=@disk.d64" -F "mode=readwrite" -F "type=d64"`
     pub fn mount_disk_image<P: AsRef<Path>>(
         &self,
         path: P,
-        drive_id: u8,
+        _drive_id: u8,
         mount_mode: drives::MountMode,
     ) -> Result<()> {
-        let url = format!(
-            "{}/v1/drives/{}:mount?mode={}",
-            self.url_pfx, drive_id, mount_mode
-        );
-        let file = std::fs::File::open(path)?;
-        self.client.post(url).body(file).send()?;
-        todo!("Disk image mounting is unfinished")
+        let disktype = DiskImageType::from_file_name(&path)?;
+        let url = format!("{}/drives/{}:mount", self.url_pfx, "a");
+        let form = reqwest::blocking::multipart::Form::new()
+            .file("file", path)
+            .map_err(|e| anyhow!("disk image error: {e}"))?
+            .text("mode", mount_mode.to_string())
+            .text("type", disktype.to_string());
+        let response = self.client.post(url).multipart(form).send()?;
+        if response.status().is_client_error() {
+            bail!(
+                "disk mount error: {} - {}",
+                response.status(),
+                response.text().unwrap()
+            );
+        }
+        Ok(())
     }
 }
