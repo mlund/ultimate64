@@ -92,7 +92,7 @@ impl TryFrom<&str> for MountMode {
             "rw" => Ok(MountMode::ReadWrite),
             "ro" => Ok(MountMode::ReadOnly),
             "unlinked" => Ok(MountMode::Unlinked),
-            _ => Err(format!("Unknown mount mode: {}", s)),
+            _ => Err(format!("Unknown mount mode: {s}")),
         }
     }
 }

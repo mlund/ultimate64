@@ -38,7 +38,7 @@ impl Rest {
     pub fn new(host: &Host) -> Self {
         Self {
             client: reqwest::blocking::Client::new(),
-            url_pfx: format!("http://{}/v1", host),
+            url_pfx: format!("http://{host}/v1"),
         }
     }
 
@@ -151,7 +151,7 @@ impl Rest {
             self.url_pfx, address, length
         );
         let bytes = self.client.get(url).send()?.bytes()?.to_vec();
-        debug!("Read {} byte(s) from {:#06x}", length, address);
+        debug!("Read {length} byte(s) from {address:#06x}");
         Ok(bytes)
     }
 

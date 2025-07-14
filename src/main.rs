@@ -157,7 +157,7 @@ fn print_disassembled(bytes: &[u8], address: u16) -> Result<()> {
         .unwrap()
         .iter()
         .for_each(|line| {
-            println!("{}", line);
+            println!("{line}");
         });
     Ok(())
 }
@@ -176,7 +176,7 @@ fn do_main() -> Result<()> {
     match args.command {
         Commands::Drives => {
             let drives = ultimate.drives()?;
-            println!("{}", drives);
+            println!("{drives}");
         }
         Commands::Pause => {
             ultimate.pause()?;
@@ -197,7 +197,7 @@ fn do_main() -> Result<()> {
                 std::fs::write(outfile.unwrap(), &data)?;
             } else {
                 data.iter().for_each(|byte| {
-                    print!("{:#04x} ", byte);
+                    print!("{byte:#04x} ");
                 });
                 println!()
             }
@@ -231,7 +231,7 @@ fn do_main() -> Result<()> {
             } else {
                 value
             };
-            debug!("Poke {:#04x} to {:#06x}", value, address);
+            debug!("Poke {value:#04x} to {address:#06x}");
             ultimate.write_mem(address, &[value])?;
         }
         Commands::Reboot => {
