@@ -4,7 +4,7 @@ use crate::aux;
 use anyhow::Result;
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::{fmt::Display, path::Path};
 
 /// Disk drive types
 #[derive(Serialize, Deserialize, Debug, Clone, ValueEnum, PartialEq, Eq, PartialOrd, Ord)]
@@ -97,13 +97,14 @@ impl TryFrom<&str> for MountMode {
     }
 }
 
-impl From<MountMode> for String {
-    fn from(m: MountMode) -> Self {
-        match m {
-            MountMode::ReadWrite => "rw".to_string(),
-            MountMode::ReadOnly => "ro".to_string(),
-            MountMode::Unlinked => "unlinked".to_string(),
-        }
+impl Display for MountMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            MountMode::ReadWrite => "rw",
+            MountMode::ReadOnly => "ro",
+            MountMode::Unlinked => "unlinked",
+        };
+        write!(f, "{s}")
     }
 }
 

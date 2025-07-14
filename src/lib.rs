@@ -194,9 +194,7 @@ impl Rest {
     ) -> Result<()> {
         let url = format!(
             "{}/v1/drives/{}:mount?mode={}",
-            self.url_pfx,
-            drive_id,
-            String::from(mount_mode)
+            self.url_pfx, drive_id, mount_mode
         );
         let file = std::fs::File::open(path)?;
         self.client.post(url).body(file).send()?;
