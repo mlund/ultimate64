@@ -1,6 +1,6 @@
 [package]
 name = "ultimate64"
-version = "0.4.0"
+version = "0.5.2"
 edition = "2021"
 description = "Rust library and command line interface for networking with Ultimate-64 and Ultimate-II+ devices using the REST API"
 authors = ["Mikael Lund <lyssky@icloud.com>"]
