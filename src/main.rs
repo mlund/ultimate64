@@ -96,7 +96,7 @@ enum Commands {
         #[clap(long = "dasm", short = 'd', action, conflicts_with = "outfile")]
         disassemble: bool,
     },
-    /// Write single byte to memory
+    /// Write or modify byte(s) in memory
     Poke {
         /// Address to write to, e.g. `4096` or `0x1000`
         #[arg(value_parser = parse::<u16>)]
