@@ -76,6 +76,9 @@ enum Commands {
         #[clap(long, short = 'm', default_value = "ro")]
         #[arg(value_enum)]
         mode: drives::MountMode,
+        /// Reset and run after mounting
+        #[clap(long, short = 'r', action, default_value_t = false)]
+        run: bool,
     },
 
     /// Pause machine
@@ -140,6 +143,11 @@ enum Commands {
         #[clap(short = 'n')]
         #[arg(value_parser = parse::<u8>)]
         songnr: Option<u8>,
+    },
+    /// Emulate keyboard input
+    Type {
+        /// Unicode text to type - will be converted to PETSCII
+        text: String,
     },
 }
 
@@ -248,6 +256,9 @@ fn do_main() -> Result<()> {
             let data = std::fs::read(file)?;
             ultimate.sid_play(&data, songnr)?;
         }
+        Commands::Type { text } => {
+            ultimate.type_text(&text)?;
+        }
         Commands::Modplay { file } => {
             let data = std::fs::read(file)?;
             ultimate.mod_play(&data)?;
@@ -256,9 +267,10 @@ fn do_main() -> Result<()> {
             file,
             drive: drive_id,
             mode,
+            run,
         } => {
             has_disk_image_extension(&file)?;
-            ultimate.mount_disk_image(&file, drive_id, mode)?;
+            ultimate.mount_disk_image(&file, drive_id, mode, run)?;
         }
         Commands::Load { file, address } => {
             let data = std::fs::read(file)?;

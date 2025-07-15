@@ -4,15 +4,19 @@
 //! [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html).
 //!
 
-use crate::drives::{DiskImageType, Drive, DriveList};
+use crate::{
+    drives::{DiskImageType, Drive, DriveList},
+    petscii::Petscii,
+};
 use anyhow::{anyhow, bail, Ok, Result};
 use log::{debug, warn};
 use reqwest::blocking::Client;
-use std::{collections::HashMap, path::Path};
+use std::{collections::HashMap, path::Path, thread::sleep, time::Duration};
 use url::Host;
 
 pub mod aux;
 pub mod drives;
+pub mod petscii;
 
 /// Communication with Ultimate series using
 /// the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html)
@@ -142,6 +146,26 @@ impl Rest {
         Ok(())
     }
 
+    /// Emulate keyboard input
+    pub fn type_text(&self, s: &str) -> Result<()> {
+        debug!("Emulating keyboard typing: {s}");
+        const TAIL_PTR: u16 = 0x00c5;
+        const HEAD_PTR: u16 = 0x00c6;
+        const BUFFER_BASE: u16 = 0x0277;
+
+        // the C64 input buffer is limited to 10 characters
+        for chunk in s.chars().collect::<Vec<_>>().chunks(10) {
+            self.write_mem(TAIL_PTR, &[0, 0])?; // clear keyboard buffer
+            chunk.iter().enumerate().try_for_each(|(i, c)| {
+                let byte = Petscii::from_str_lossy(&c.to_string())[0];
+                self.write_mem(BUFFER_BASE + i as u16, &[byte])
+            })?;
+            self.write_mem(HEAD_PTR, &[chunk.len() as u8])?;
+            sleep(Duration::from_millis(50)); // wait for C64 to process input
+        }
+        Ok(())
+    }
+
     /// Read `length` bytes from `address`
     pub fn read_mem(&self, address: u16, length: u16) -> Result<Vec<u8>> {
         aux::check_address_overflow(address, length)?;
@@ -207,11 +231,12 @@ impl Rest {
     pub fn mount_disk_image<P: AsRef<Path>>(
         &self,
         path: P,
-        drive_id: String,
+        drive: String,
         mount_mode: drives::MountMode,
+        run: bool,
     ) -> Result<()> {
         let disktype = DiskImageType::from_file_name(&path)?;
-        let url = format!("{}/drives/{drive_id}:mount", self.url_pfx);
+        let url = format!("{}/drives/{drive}:mount", self.url_pfx);
         let form = reqwest::blocking::multipart::Form::new()
             .file("file", path)
             .map_err(|e| anyhow!("disk image error: {e}"))?
@@ -224,6 +249,11 @@ impl Rest {
                 response.status(),
                 response.text().unwrap()
             );
+        }
+        if run {
+            self.reset()?;
+            sleep(Duration::from_millis(2000));
+            self.type_text("load\"*\",8,1\nrun\n")?;
         }
         Ok(())
     }

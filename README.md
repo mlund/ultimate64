@@ -42,6 +42,7 @@ ultimate64 poke 4096 --xor 0b0000_1100       # bitwise manipulation
 ultimate64 poke 0x0400 0x20 --fill 1000      # fill memory
 ultimate64 sidplay yie_ar_kung_fu.sid -n 2   # play SID tune
 ultimate64 modplay enigma.mod                # play Amiga MOD tune
+ultimate64 type $'10 print "hello"\nrun\n'   # Emulate keyboard typing
 ~~~
 
 Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
@@ -55,6 +56,8 @@ Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
 - [x] Excellent error handling; error messages; and input validation
 - [x] Convenient decimal, hexadecimal, and binary input
 - [x] Bitwise operations for memory manipulation
+- [x] Emulate keyboard typing w. unicode to PETSCII conversion
+- [x] Mount and run external disk images
 - [x] 6502 disassembly
 - [x] Load address detection
 - [x] Precompiled binaries for MacOS, Linux, and Windows
