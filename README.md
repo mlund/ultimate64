@@ -33,16 +33,18 @@ assumed in the following examples.
 
 ~~~ bash
 ultimate64 --help                            # show available commands
-ultimate64 pause                             # pause machine
 ultimate64 run skate_or_die.prg              # load and run PRG file
+ultimate64 mount desert_dream.d64 --run      # mount external image and run
+ultimate64 sidplay yie_ar_kung_fu.sid -n 2   # play SID tune
+ultimate64 modplay enigma.mod                # play Amiga MOD tune
 ultimate64 load sprites.dat --address 0x2000 # load data to memory
 ultimate64 peek 0x1000 --dasm -n 32          # disassemble memory
 ultimate64 poke 0xd020 3                     # write single byte
 ultimate64 poke 4096 --xor 0b0000_1100       # bitwise manipulation
 ultimate64 poke 0x0400 0x20 --fill 1000      # fill memory
-ultimate64 sidplay yie_ar_kung_fu.sid -n 2   # play SID tune
-ultimate64 modplay enigma.mod                # play Amiga MOD tune
-ultimate64 type $'10 print "hello"\nrun\n'   # Emulate keyboard typing
+ultimate64 type $'print "hello"\n'           # Emulate keyboard typing
+ultimate64 pause                             # pause machine
+ultimate64 reset                             # reset machine
 ~~~
 
 Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
@@ -64,6 +66,6 @@ Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
 
 ## Todo
 
-- [ ] Disk image and file manipulation
+- [ ] Disk image manipulation
 - [ ] Memory bank switching for RAM access
 - [ ] Ultimate configuration handling
