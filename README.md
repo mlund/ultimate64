@@ -22,7 +22,7 @@ cargo install ultimate64
 # Usage
 
 ~~~ bash
-ultimate64 HOST COMMAND <OPTIONS>
+ru64 HOST COMMAND <OPTIONS>
 ~~~
 
 Where `HOST` is the IP address or hostname of the Ultimate device on your local network.
@@ -32,19 +32,19 @@ assumed in the following examples.
 ## Examples
 
 ~~~ bash
-ultimate64 --help                            # show available commands
-ultimate64 run skate_or_die.prg              # load and run PRG file
-ultimate64 mount desert_dream.d64 --run      # mount external image and run
-ultimate64 sidplay yie_ar_kung_fu.sid -n 2   # play SID tune
-ultimate64 modplay enigma.mod                # play Amiga MOD tune
-ultimate64 load sprites.dat --address 0x2000 # load data to memory
-ultimate64 peek 0x1000 --dasm -n 32          # disassemble memory
-ultimate64 poke 0xd020 3                     # write single byte
-ultimate64 poke 4096 --xor 0b0000_1100       # bitwise manipulation
-ultimate64 poke 0x0400 0x20 --fill 1000      # fill memory
-ultimate64 type $'print "hello"\n'           # Emulate keyboard typing
-ultimate64 pause                             # pause machine
-ultimate64 reset                             # reset machine
+ru64 --help                            # show available commands
+ru64 run skate_or_die.prg              # load and run PRG file
+ru64 mount desert_dream.d64 --run      # mount external image and run
+ru64 sidplay yie_ar_kung_fu.sid -n 2   # play SID tune
+ru64 modplay enigma.mod                # play Amiga MOD tune
+ru64 load sprites.dat --address 0x2000 # load data to memory
+ru64 peek 0x1000 --dasm -n 32          # disassemble memory
+ru64 poke 0xd020 3                     # write single byte
+ru64 poke 4096 --xor 0b0000_1100       # bitwise manipulation
+ru64 poke 0x0400 0x20 --fill 1000      # fill memory
+ru64 type $'print "hello"\n'           # Emulate keyboard typing
+ru64 pause                             # pause machine
+ru64 reset                             # reset machine
 ~~~
 
 Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
