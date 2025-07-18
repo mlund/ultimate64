@@ -62,7 +62,7 @@ Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
 - [x] Mount and run external disk images
 - [x] 6502 disassembly
 - [x] Load address detection
-- [x] Precompiled binaries for MacOS, Linux, and Windows
+- [x] Precompiled binaries for Linux and Windows (mac users should use Cargo, see above)
 
 ## Todo
 
