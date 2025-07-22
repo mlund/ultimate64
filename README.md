@@ -11,6 +11,7 @@ the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_call
 
 # Installation
 
+Works with Linux, macOS, Windows.
 Either download a [pre-compiled binary](https://github.com/mlund/ultimate64/releases/latest),
 or compile and install using `cargo`, provided that you have a working
 [Rust](https://www.rust-lang.org/tools/install) installation:
