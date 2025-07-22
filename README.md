@@ -34,7 +34,7 @@ assumed in the following examples.
 
 ~~~ bash
 ru64 --help                            # show available commands
-ru64 run skate_or_die.prg              # load and run PRG file
+ru64 run skate_or_die.prg              # load and run external PRG file
 ru64 mount desert_dream.d64 --run      # mount external image and run
 ru64 sidplay yie_ar_kung_fu.sid -n 2   # play SID tune
 ru64 modplay enigma.mod                # play Amiga MOD tune
