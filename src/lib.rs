@@ -5,10 +5,11 @@
 //!
 
 use crate::{
+    aux::check_address_overflow,
     drives::{DiskImageType, Drive, DriveList},
     petscii::Petscii,
 };
-use anyhow::{anyhow, bail, Ok, Result};
+use anyhow::{anyhow, bail, ensure, Ok, Result};
 use log::{debug, warn};
 use reqwest::blocking::Client;
 use std::{collections::HashMap, path::Path, thread::sleep, time::Duration};
@@ -136,7 +137,7 @@ impl Rest {
 
     /// Write data to memory using a POST request
     pub fn write_mem(&self, address: u16, data: &[u8]) -> Result<()> {
-        aux::check_address_overflow(address, data.len() as u16)?;
+        check_address_overflow(address, data.len() as u16)?;
         if matches!(address, 0 | 1) {
             warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
         }
@@ -152,6 +153,11 @@ impl Rest {
         const TAIL_PTR: u16 = 0x00c5;
         const HEAD_PTR: u16 = 0x00c6;
         const BUFFER_BASE: u16 = 0x0277;
+
+        ensure!(
+            self.basic_ready()?,
+            "cannot emulate typing as BASIC prompt is not ready"
+        );
 
         // The C64 input buffer is limited to 10 characters so we split the input
         // in chunks of 10 characters and write them to the buffer
@@ -180,15 +186,15 @@ impl Rest {
     ///
     /// Done by checking if the system vector at 0x0302 points the BASIN kernal routine.
     pub fn basic_ready(&self) -> Result<bool> {
-        const BASIN: u16 = 0xa7ae; // BASIC input routine address in Kernal ROM
-        const VECTOR: u16 = 0x0302; // System vector address
-        Ok(self.read_le_word(VECTOR)? == BASIN)
+        const BASIN_ADDR: u16 = 0xa7ae; // BASIC input routine in Kernal ROM
+        const VECTOR_ADDR: u16 = 0x0302; // System vector
+        Ok(self.read_le_word(VECTOR_ADDR)? == BASIN_ADDR)
     }
 
     /// Read `length` bytes from `address`
     pub fn read_mem(&self, address: u16, length: u16) -> Result<Vec<u8>> {
-        aux::check_address_overflow(address, length)?;
-        if matches!(address, 0 | 1) {
+        check_address_overflow(address, length)?;
+        if matches!(address, 0x0000 | 0x0001) {
             warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
         }
         let url = format!(
@@ -200,7 +206,7 @@ impl Rest {
         Ok(bytes)
     }
 
-    /// Play SID file
+    /// Play SID file - if no `songnr` is provided, the default song is played.
     pub fn sid_play(&self, siddata: &[u8], songnr: Option<u8>) -> Result<()> {
         let url = match songnr {
             Some(songnr) => format!("{}/runners:sidplay?songnr={}", self.url_pfx, songnr),
