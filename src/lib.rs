@@ -226,12 +226,17 @@ impl Rest {
     /// Load data into memory using either a custom address, or deduce the
     /// load address from the first two bytes of the data (little endian).
     /// In the case of the latter, the first two bytes are not written to memory.
-    pub fn load_data(&self, data: &[u8], address: Option<u16>) -> Result<()> {
+    /// Returns the load address and the number of bytes written.
+    pub fn load_data(&self, data: &[u8], address: Option<u16>) -> Result<(u16, usize)> {
         match address {
-            Some(address) => self.write_mem(address, data),
+            Some(address) => {
+                self.write_mem(address, data)?;
+                Ok((address, data.len()))
+            }
             None => {
                 let load_address = aux::extract_load_address(data)?;
-                self.write_mem(load_address, &data[2..]) // skip first two bytes
+                self.write_mem(load_address, &data[2..])?; // skip first two bytes
+                Ok((load_address, data.len() - 2))
             }
         }
     }

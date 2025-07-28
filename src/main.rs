@@ -60,6 +60,12 @@ enum Commands {
         #[clap(long, short = '@', default_value = None)]
         #[arg(value_parser = parse::<u16>)]
         address: Option<u16>,
+        /// Attempt to run after loading using RUN or SYS
+        #[clap(long, short = 'r', action, default_value_t = false)]
+        run: bool,
+        /// Reset before loading
+        #[clap(long, action, default_value_t = false)]
+        reset: bool,
     },
     /// Play Amiga MOD file
     Modplay {
@@ -273,9 +279,27 @@ fn do_main() -> Result<()> {
             has_disk_image_extension(&file)?;
             ultimate.mount_disk_image(&file, drive_id, mode, run)?;
         }
-        Commands::Load { file, address } => {
+        Commands::Load {
+            file,
+            address,
+            run,
+            reset,
+        } => {
             let data = fs::read(file)?;
-            ultimate.load_data(&data, address)?;
+
+            if reset {
+                ultimate.reset()?;
+            }
+
+            let (address, _) = ultimate.load_data(&data, address)?;
+
+            if run {
+                const BASIC_LOAD_ADDR: u16 = 0x0801;
+                match address {
+                    BASIC_LOAD_ADDR => ultimate.type_text("run\n")?,
+                    _ => ultimate.type_text(&format!("sys{address}\n"))?,
+                }
+            }
         }
     }
     Ok(())
