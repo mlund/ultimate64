@@ -2,8 +2,8 @@
 //! Auxiliary functions
 //!
 
-use anyhow::Result;
-use std::path::Path;
+use anyhow::{anyhow, bail, Result};
+use std::{ffi::OsStr, path::Path};
 
 /// Check if 16-bit start address can contain `length` bytes
 ///
@@ -16,11 +16,11 @@ use std::path::Path;
 ///
 pub fn check_address_overflow(address: u16, length: u16) -> Result<()> {
     if length > 0 && u16::checked_add(address, length - 1).is_none() {
-        Err(anyhow::anyhow!(
+        bail!(
             "Address {:#06x} + length {:#06x} overflows address space",
             address,
             length
-        ))
+        )
     } else {
         Ok(())
     }
@@ -39,7 +39,7 @@ pub fn check_address_overflow(address: u16, length: u16) -> Result<()> {
 pub fn get_extension<P: AsRef<Path>>(path: P) -> Option<String> {
     path.as_ref()
         .extension()
-        .and_then(std::ffi::OsStr::to_str)
+        .and_then(OsStr::to_str)
         .map(|s| s.to_lowercase())
 }
 
@@ -56,6 +56,7 @@ pub fn get_extension<P: AsRef<Path>>(path: P) -> Option<String> {
 /// ```
 pub fn extract_load_address(data: &[u8]) -> Result<u16> {
     data.get(..2)
-        .ok_or_else(|| anyhow::anyhow!("Data must be two or more bytes to detect load address"))
-        .map(|b| u16::from_le_bytes(b.try_into().unwrap()))
+        .ok_or_else(|| anyhow!("at least two bytes required to detect load address"))
+        .map(|b| b.try_into().unwrap()) // -> [u8; 2] -  panic impossible
+        .map(u16::from_le_bytes) // -> u16 using little-endian byte order
 }

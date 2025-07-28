@@ -153,14 +153,15 @@ impl Rest {
         const HEAD_PTR: u16 = 0x00c6;
         const BUFFER_BASE: u16 = 0x0277;
 
-        // the C64 input buffer is limited to 10 characters
+        // The C64 input buffer is limited to 10 characters so we split the input
+        // in chunks of 10 characters and write them to the buffer
         for chunk in s.chars().collect::<Vec<_>>().chunks(10) {
             self.write_mem(TAIL_PTR, &[0, 0])?; // clear keyboard buffer
             chunk.iter().enumerate().try_for_each(|(i, c)| {
-                let byte = Petscii::from_str_lossy(&c.to_string())[0];
+                let byte: u8 = Petscii::from_str_lossy(&c.to_string())[0];
                 self.write_mem(BUFFER_BASE + i as u16, &[byte])
             })?;
-            self.write_mem(HEAD_PTR, &[chunk.len() as u8])?;
+            self.write_mem(HEAD_PTR, &[chunk.len() as u8])?; // trigger typing
             sleep(Duration::from_millis(50)); // wait for C64 to process input
         }
         Ok(())
@@ -243,6 +244,9 @@ impl Rest {
             .text("mode", mount_mode.to_string())
             .text("type", disktype.to_string());
         let response = self.client.post(url).multipart(form).send()?;
+
+        // should not trigger by normal operation and indicates a problem
+        // with the request or the server
         if response.status().is_client_error() {
             bail!(
                 "disk mount error: {} - {}",
@@ -250,9 +254,11 @@ impl Rest {
                 response.text().unwrap()
             );
         }
+        // optionally reset and run the first program on the disk
+        // a short delay is needed to allow the reset to complete
         if run {
             self.reset()?;
-            sleep(Duration::from_millis(2000));
+            sleep(Duration::from_secs(2));
             self.type_text("load\"*\",8,1\nrun\n")?;
         }
         Ok(())

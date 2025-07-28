@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{ensure, Result};
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{Parser, Subcommand};
 use log::debug;
@@ -10,6 +10,7 @@ extern crate pretty_env_logger;
 use pretty_env_logger::env_logger::DEFAULT_FILTER_ENV;
 use prettytable::{format, Cell, Row, Table};
 use std::collections::HashMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 use url::Host;
 
@@ -196,7 +197,7 @@ fn do_main() -> Result<()> {
             if disassemble {
                 print_disassembled(&data, address)?;
             } else if outfile.is_some() {
-                std::fs::write(outfile.unwrap(), &data)?;
+                fs::write(outfile.unwrap(), &data)?;
             } else {
                 data.iter().for_each(|byte| {
                     print!("{byte:#04x} ");
@@ -212,8 +213,8 @@ fn do_main() -> Result<()> {
             bitwise_xor,
             fill,
         } => {
-            if fill.is_some() && fill.unwrap() > 0 {
-                let fill = fill.unwrap();
+            if let Some(fill) = fill {
+                ensure!(fill > 0, "fill must be greater than zero");
                 let data = vec![value; fill as usize];
                 ultimate.write_mem(address, &data)?;
                 debug!(
@@ -223,7 +224,7 @@ fn do_main() -> Result<()> {
                     value
                 );
                 return Ok(());
-            }
+            };
             let value = if bitwise_and {
                 ultimate.read_mem(address, 1)?[0] & value
             } else if bitwise_or {
@@ -246,21 +247,21 @@ fn do_main() -> Result<()> {
             ultimate.resume()?;
         }
         Commands::Run { file } => {
-            let data = std::fs::read(&file)?;
+            let data = fs::read(&file)?;
             match aux::get_extension(&file).unwrap_or_default().as_str() {
                 "crt" => ultimate.run_crt(&data)?,
                 _ => ultimate.run_prg(&data)?,
             }
         }
         Commands::Sidplay { file, songnr } => {
-            let data = std::fs::read(file)?;
+            let data = fs::read(file)?;
             ultimate.sid_play(&data, songnr)?;
         }
         Commands::Type { text } => {
             ultimate.type_text(&text)?;
         }
         Commands::Modplay { file } => {
-            let data = std::fs::read(file)?;
+            let data = fs::read(file)?;
             ultimate.mod_play(&data)?;
         }
         Commands::Mount {
@@ -273,7 +274,7 @@ fn do_main() -> Result<()> {
             ultimate.mount_disk_image(&file, drive_id, mode, run)?;
         }
         Commands::Load { file, address } => {
-            let data = std::fs::read(file)?;
+            let data = fs::read(file)?;
             ultimate.load_data(&data, address)?;
         }
     }

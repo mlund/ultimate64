@@ -22,10 +22,10 @@ pub enum DriveType {
 impl Display for DriveType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            DriveType::CBM1541 => "1541",
-            DriveType::CBM1571 => "1571",
-            DriveType::CBM1581 => "1581",
-            DriveType::DOS => "DOS emulation",
+            Self::CBM1541 => "1541",
+            Self::CBM1571 => "1571",
+            Self::CBM1581 => "1581",
+            Self::DOS => "DOS emulation",
         };
         write!(f, "{s}")
     }
@@ -50,25 +50,25 @@ impl DiskImageType {
     /// New disk image type from file name
     pub fn from_file_name<T: AsRef<Path>>(path: T) -> Result<Self> {
         let ext = aux::get_extension(path).unwrap_or_default();
-        match ext.as_str() {
-            "d64" => Ok(Self::D64),
-            "g64" => Ok(Self::G64),
-            "d71" => Ok(Self::D71),
-            "g71" => Ok(Self::G71),
-            "d81" => Ok(Self::D81),
-            _ => bail!("File extension must be one of: d64, d71, d81, g64, g71"),
-        }
+        Ok(match ext.as_str() {
+            "d64" => Self::D64,
+            "d71" => Self::D71,
+            "d81" => Self::D81,
+            "g64" => Self::G64,
+            "g71" => Self::G71,
+            _ => bail!("File extension must be one of: d64, g64, d71, g71, d81"),
+        })
     }
 }
 
 impl Display for DiskImageType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            DiskImageType::D64 => "d64",
-            DiskImageType::G64 => "g64",
-            DiskImageType::D71 => "d71",
-            DiskImageType::G71 => "g71",
-            DiskImageType::D81 => "d81",
+            Self::D64 => "d64",
+            Self::G64 => "g64",
+            Self::D71 => "d71",
+            Self::G71 => "g71",
+            Self::D81 => "d81",
         };
         write!(f, "{s}")
     }
