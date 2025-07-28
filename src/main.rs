@@ -105,6 +105,15 @@ enum Commands {
         #[clap(long = "dasm", short = 'd', action, conflicts_with = "outfile")]
         disassemble: bool,
     },
+    /// Play SID or Amiga MOD file
+    Play {
+        /// SID or MOD file
+        file: PathBuf,
+        /// Optional song number for SID
+        #[clap(short = 'n')]
+        #[arg(value_parser = parse::<u8>)]
+        songnr: Option<u8>,
+    },
     /// Write or modify byte(s) in memory
     Poke {
         /// Address to write to, e.g. `4096` or `0x1000`
@@ -140,15 +149,6 @@ enum Commands {
     Run {
         /// PRG or CRT file to load and run
         file: PathBuf,
-    },
-    /// Play SID or Amiga MOD file
-    Play {
-        /// SID or MOD file
-        file: PathBuf,
-        /// Optional song number for SID
-        #[clap(short = 'n')]
-        #[arg(value_parser = parse::<u8>)]
-        songnr: Option<u8>,
     },
     /// Emulate keyboard input
     Type {
