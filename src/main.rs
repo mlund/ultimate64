@@ -1,4 +1,4 @@
-use anyhow::{ensure, Result};
+use anyhow::{bail, ensure, Result};
 use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{Parser, Subcommand};
 use log::debug;
@@ -71,11 +71,6 @@ enum Commands {
     },
     /// Press menu button
     Menu,
-    /// Play Amiga MOD file
-    Modplay {
-        /// MOD file
-        file: PathBuf,
-    },
     /// Mount disk image
     Mount {
         /// Image file
@@ -146,11 +141,11 @@ enum Commands {
         /// PRG or CRT file to load and run
         file: PathBuf,
     },
-    /// Play SID file
-    Sidplay {
-        /// SID file
+    /// Play SID or Amiga MOD file
+    Play {
+        /// SID or MOD file
         file: PathBuf,
-        /// Optional song number
+        /// Optional song number for SID
         #[clap(short = 'n')]
         #[arg(value_parser = parse::<u8>)]
         songnr: Option<u8>,
@@ -193,7 +188,7 @@ fn do_main() -> Result<()> {
         }
         Commands::Info => {
             let info = ultimate.info()?;
-            println!("{}", info);
+            println!("{info}");
         }
         Commands::Pause => {
             ultimate.pause()?;
@@ -267,19 +262,20 @@ fn do_main() -> Result<()> {
                 _ => ultimate.run_prg(&data)?,
             }
         }
-        Commands::Sidplay { file, songnr } => {
-            let data = fs::read(file)?;
-            ultimate.sid_play(&data, songnr)?;
+        Commands::Play { file, songnr } => {
+            let data = fs::read(&file)?;
+            let ext = aux::get_extension(&file).unwrap_or_default();
+            match ext.as_str() {
+                "sid" => ultimate.sid_play(&data, songnr)?,
+                "mod" => ultimate.mod_play(&data)?,
+                _ => bail!("Unsupported music file format: {ext}"),
+            }
         }
         Commands::Type { text } => {
             ultimate.type_text(&text)?;
         }
         Commands::Menu => {
             ultimate.menu()?;
-        }
-        Commands::Modplay { file } => {
-            let data = fs::read(file)?;
-            ultimate.mod_play(&data)?;
         }
         Commands::Mount {
             file,
