@@ -167,6 +167,24 @@ impl Rest {
         Ok(())
     }
 
+    /// Read word (2 bytes) from memory and interpret as little-endian
+    pub fn read_le_word(&self, address: u16) -> Result<u16> {
+        let bytes: [u8; 2] = self
+            .read_mem(address, 2)?
+            .try_into()
+            .map_err(|_| anyhow!("failed to read from {address:#06x}"))?;
+        Ok(u16::from_le_bytes(bytes))
+    }
+
+    /// Check if BASIC prompt is active and accepts input
+    ///
+    /// Done by checking if the system vector at 0x0302 points the BASIN kernal routine.
+    pub fn basic_ready(&self) -> Result<bool> {
+        const BASIN: u16 = 0xa7ae; // BASIC input routine address in Kernal ROM
+        const VECTOR: u16 = 0x0302; // System vector address
+        Ok(self.read_le_word(VECTOR)? == BASIN)
+    }
+
     /// Read `length` bytes from `address`
     pub fn read_mem(&self, address: u16, length: u16) -> Result<Vec<u8>> {
         aux::check_address_overflow(address, length)?;
