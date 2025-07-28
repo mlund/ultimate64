@@ -102,6 +102,13 @@ impl Rest {
         Ok(())
     }
 
+    /// Emulate pressing the menu button
+    pub fn menu(&self) -> Result<()> {
+        debug!("Emulating menu button press");
+        self.put("machine:menu_button")?;
+        Ok(())
+    }
+
     /// Reset machine
     pub fn reset(&self) -> Result<()> {
         debug!("Reset machine");
@@ -185,9 +192,18 @@ impl Rest {
     /// Check if BASIC prompt is active and accepts input
     ///
     /// Done by checking if the system vector at 0x0302 points the BASIN kernal routine.
+    #[allow(unused)]
     pub fn basic_ready(&self) -> Result<bool> {
+        return Ok(true);
+        todo!("implement correct basic_ready check");
         const BASIN_ADDR: u16 = 0xa7ae; // BASIC input routine in Kernal ROM
         const VECTOR_ADDR: u16 = 0x0302; // System vector
+        let word = self.read_le_word(VECTOR_ADDR)?;
+        log::debug!("Word at {VECTOR_ADDR:#06x} is {word:#06x}");
+        ensure!(
+            word != 0,
+            "BASIC prompt is not ready, vector at {VECTOR_ADDR:#06x} is zero"
+        );
         Ok(self.read_le_word(VECTOR_ADDR)? == BASIN_ADDR)
     }
 

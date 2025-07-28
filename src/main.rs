@@ -67,6 +67,8 @@ enum Commands {
         #[clap(long, action, default_value_t = false)]
         reset: bool,
     },
+    /// Press menu button
+    Menu,
     /// Play Amiga MOD file
     Modplay {
         /// MOD file
@@ -265,6 +267,9 @@ fn do_main() -> Result<()> {
         }
         Commands::Type { text } => {
             ultimate.type_text(&text)?;
+        }
+        Commands::Menu => {
+            ultimate.menu()?;
         }
         Commands::Modplay { file } => {
             let data = fs::read(file)?;
