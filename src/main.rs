@@ -52,6 +52,8 @@ struct Cli {
 enum Commands {
     /// Show drive information
     Drives,
+    /// Show Ultimate device information
+    Info,
     /// Load file into memory
     Load {
         /// File to load
@@ -188,6 +190,10 @@ fn do_main() -> Result<()> {
         Commands::Drives => {
             let drives = ultimate.drive_list()?;
             print_drive_table(drives);
+        }
+        Commands::Info => {
+            let info = ultimate.info()?;
+            println!("{}", info);
         }
         Commands::Pause => {
             ultimate.pause()?;

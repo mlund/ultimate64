@@ -10,6 +10,7 @@ use crate::{
     petscii::Petscii,
 };
 use anyhow::{anyhow, bail, ensure, Ok, Result};
+use core::fmt::Display;
 use log::{debug, warn};
 use reqwest::blocking::Client;
 use std::{collections::HashMap, path::Path, thread::sleep, time::Duration};
@@ -18,6 +19,37 @@ use url::Host;
 pub mod aux;
 pub mod drives;
 pub mod petscii;
+
+/// Ultimate-64 and Ultimate-II device information
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize, PartialEq, Eq)]
+pub struct DeviceInfo {
+    /// Product name
+    pub product: String,
+    /// Firmware version
+    pub firmware_version: String,
+    /// FPGA version
+    pub fpga_version: String,
+    /// Core version (only for Ultimate-64)
+    pub core_version: Option<String>,
+    /// Hostname
+    pub hostname: String,
+    /// Unique ID (unless disabled under "Network Settings")
+    pub unique_id: Option<String>,
+}
+
+impl Display for DeviceInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} (firmware {}, fpga {}, core {}, id {})",
+            self.product,
+            self.firmware_version,
+            self.fpga_version,
+            self.core_version.as_deref().unwrap_or("N/A"),
+            self.unique_id.as_deref().unwrap_or("N/A")
+        )
+    }
+}
 
 /// Communication with Ultimate series using
 /// the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html)
@@ -53,6 +85,13 @@ impl Rest {
         let url = format!("{}/{}", self.url_pfx, path);
         self.client.put(url).send()?;
         Ok(())
+    }
+
+    /// Get device information
+    pub fn info(&self) -> Result<DeviceInfo> {
+        let url = format!("{}/info", self.url_pfx);
+        let body = self.client.get(url).send()?.text()?;
+        Ok(serde_json::from_str(&body)?)
     }
 
     /// Get version
