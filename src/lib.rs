@@ -69,7 +69,7 @@ pub struct Rest {
     /// HTTP client
     client: Client,
     /// Header
-    url_pfx: String,
+    url_prefix: String,
     /// Headers
     headers: HeaderMap,
 }
@@ -84,7 +84,7 @@ impl Rest {
 
         Ok(Self {
             client: Client::new(),
-            url_pfx: format!("http://{host}/v1"),
+            url_prefix: format!("http://{host}/v1"),
             headers,
         })
     }
@@ -104,21 +104,21 @@ impl Rest {
     }
 
     fn put(&self, path: &str) -> Result<Response> {
-        let url = format!("{}/{}", self.url_pfx, path);
+        let url = format!("{}/{}", self.url_prefix, path);
         let response = self.client.put(url).headers(self.headers.clone()).send()?;
         Self::check_response(&response)?;
         Ok(response)
     }
 
     fn get(&self, path: &str) -> Result<Response> {
-        let url = format!("{}/{}", self.url_pfx, path);
+        let url = format!("{}/{}", self.url_prefix, path);
         let response = self.client.get(url).headers(self.headers.clone()).send()?;
         Self::check_response(&response)?;
         Ok(response)
     }
 
     fn post<T: Into<Body>>(&self, path: &str, body: T) -> Result<Response> {
-        let url = format!("{}/{}", self.url_pfx, path);
+        let url = format!("{}/{}", self.url_prefix, path);
         let response = self
             .client
             .post(url)
@@ -223,7 +223,7 @@ impl Rest {
         if matches!(address, 0 | 1) {
             warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
         }
-        let path = format!("machine:writemem?address={:x}", address);
+        let path = format!("machine:writemem?address={address:x}");
         self.post(&path, data.to_vec())?;
         debug!("Wrote {} byte(s) to {:#06x}", data.len(), address);
         Ok(())
@@ -288,7 +288,7 @@ impl Rest {
         if matches!(address, 0x0000 | 0x0001) {
             warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
         }
-        let path = format!("machine:readmem?address={:x}&length={}", address, length);
+        let path = format!("machine:readmem?address={address:x}&length={length}");
         let bytes = self.get(path.as_str())?.bytes()?.to_vec();
         debug!("Read {length} byte(s) from {address:#06x}");
         Ok(bytes)
@@ -297,8 +297,8 @@ impl Rest {
     /// Play SID file - if no `songnr` is provided, the default song is played.
     pub fn sid_play(&self, siddata: &[u8], songnr: Option<u8>) -> Result<()> {
         let path = match songnr {
-            Some(songnr) => format!("runners:sidplay?songnr={}", songnr),
-            None => format!("runners:sidplay"),
+            Some(songnr) => format!("runners:sidplay?songnr={songnr}"),
+            None => "runners:sidplay".to_string(),
         };
         self.post(&path, siddata.to_vec())?;
         Ok(())
@@ -352,7 +352,7 @@ impl Rest {
         run: bool,
     ) -> Result<()> {
         let disktype = DiskImageType::from_file_name(&path)?;
-        let url = format!("{}/drives/{drive}:mount", self.url_pfx);
+        let url = format!("{}/drives/{drive}:mount", self.url_prefix);
         let form = reqwest::blocking::multipart::Form::new()
             .file("file", path)
             .map_err(|e| anyhow!("disk image error: {e}"))?
