@@ -29,6 +29,7 @@ ru64 HOST COMMAND <OPTIONS>
 Where `HOST` is the IP address or hostname of the Ultimate device on your local network.
 Alternatively specify this in the environmental variable `ULTIMATE_HOST` as
 assumed in the following examples.
+`ULTIMATE_PASSWORD` may be used to specify a network password for your Ultimate device.
 
 ## Examples
 
@@ -64,6 +65,7 @@ Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
 - [x] 6502 disassembly
 - [x] Load address detection
 - [x] Precompiled binaries for Linux and Windows (mac users should use Cargo, see above)
+- [x] Network password support
 
 ## Todo
 

@@ -46,6 +46,10 @@ struct Cli {
     /// Verbose output
     #[clap(long, short = 'v', action)]
     pub verbose: bool,
+    /// Optional password for Ultimate device
+    #[clap(env = "ULTIMATE_PASSWORD")]
+    #[clap(long, short = 'p')]
+    pub password: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -172,7 +176,7 @@ fn print_disassembled(bytes: &[u8], address: u16) -> Result<()> {
 
 fn do_main() -> Result<()> {
     let args = Cli::parse();
-    let ultimate = Rest::new(&args.host);
+    let ultimate = Rest::new(&args.host, args.password.clone())?;
 
     if args.verbose && std::env::var(DEFAULT_FILTER_ENV).is_err() {
         std::env::set_var(DEFAULT_FILTER_ENV, "Debug");
