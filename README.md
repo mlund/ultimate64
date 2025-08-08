@@ -35,6 +35,7 @@ assumed in the following examples.
 
 ~~~ bash
 ru64 --help                            # show available commands
+ru64 info                              # Show device info (type, core version etc.)
 ru64 run skate_or_die.prg              # load and run external PRG file
 ru64 mount desert_dream.d64 --run      # mount external image and run
 ru64 play yie_ar_kung_fu.sid -n 2      # play SID tune

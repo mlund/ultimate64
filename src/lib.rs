@@ -103,6 +103,7 @@ impl Rest {
         Ok(())
     }
 
+    /// HTTP PUT request
     fn put(&self, path: &str) -> Result<Response> {
         let url = format!("{}/{}", self.url_prefix, path);
         let response = self.client.put(url).headers(self.headers.clone()).send()?;
@@ -110,6 +111,7 @@ impl Rest {
         Ok(response)
     }
 
+    /// HTTP GET request
     fn get(&self, path: &str) -> Result<Response> {
         let url = format!("{}/{}", self.url_prefix, path);
         let response = self.client.get(url).headers(self.headers.clone()).send()?;
@@ -117,6 +119,7 @@ impl Rest {
         Ok(response)
     }
 
+    /// HTTP POST request with body
     fn post<T: Into<Body>>(&self, path: &str, body: T) -> Result<Response> {
         let url = format!("{}/{}", self.url_prefix, path);
         let response = self
@@ -241,16 +244,18 @@ impl Rest {
             "cannot emulate typing as BASIC prompt is not ready"
         );
 
-        // The C64 input buffer is limited to 10 characters so we split the input
-        // in chunks of 10 characters and write them to the buffer
-        for chunk in s.chars().collect::<Vec<_>>().chunks(10) {
+        // Convert string to PETSCII bytes
+        let petscii: Vec<u8> = s
+            .chars()
+            .map(|c| Petscii::from_str_lossy(&c.to_string())[0])
+            .collect();
+
+        // C64 input buffer is limited to 10 characters
+        for chunk in petscii.chunks(10) {
             self.write_mem(TAIL_PTR, &[0, 0])?; // clear keyboard buffer
-            chunk.iter().enumerate().try_for_each(|(i, c)| {
-                let byte: u8 = Petscii::from_str_lossy(&c.to_string())[0];
-                self.write_mem(BUFFER_BASE + i as u16, &[byte])
-            })?;
+            self.write_mem(BUFFER_BASE, chunk)?; // write PETSCII to buffer
             self.write_mem(HEAD_PTR, &[chunk.len() as u8])?; // trigger typing
-            sleep(Duration::from_millis(50)); // wait for C64 to process input
+            sleep(Duration::from_millis(20)); // wait for C64 (may not be needed)
         }
         Ok(())
     }
