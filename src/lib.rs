@@ -268,7 +268,7 @@ impl Rest {
     ///
     /// Done by checking if the system vector at 0x0302 points the BASIN kernal routine.
     #[allow(unused)]
-    pub fn basic_ready(&self) -> Result<bool> {
+    fn basic_ready(&self) -> Result<bool> {
         return Ok(true);
         todo!("implement correct basic_ready check");
         const BASIN_ADDR: u16 = 0xa7ae; // BASIC input routine in Kernal ROM
