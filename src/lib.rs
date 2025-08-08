@@ -12,7 +12,11 @@ use crate::{
 use anyhow::{anyhow, bail, ensure, Ok, Result};
 use core::fmt::Display;
 use log::{debug, warn};
-use reqwest::blocking::Client;
+use reqwest::{
+    blocking::Body,
+    header::{HeaderMap, HeaderValue},
+};
+use reqwest::{blocking::Client, blocking::Response};
 use std::{collections::HashMap, path::Path, thread::sleep, time::Duration};
 use url::Host;
 
@@ -66,6 +70,8 @@ pub struct Rest {
     client: Client,
     /// Header
     url_pfx: String,
+    /// Headers
+    headers: HeaderMap,
 }
 
 impl Rest {
@@ -74,30 +80,48 @@ impl Rest {
     /// # Arguments
     ///
     /// * `host` - Hostname or IP address of Ultimate-64 of Ultimate-II
-    pub fn new(host: &Host) -> Self {
-        Self {
+    pub fn new(host: &Host, password: Option<String>) -> Result<Self> {
+        let mut headers = HeaderMap::new();
+        if let Some(pwd) = password {
+            headers.insert("X-password", HeaderValue::from_str(pwd.as_str())?);
+        }
+        Ok(Self {
             client: Client::new(),
             url_pfx: format!("http://{host}/v1"),
-        }
+            headers,
+        })
     }
 
     fn put(&self, path: &str) -> Result<()> {
         let url = format!("{}/{}", self.url_pfx, path);
-        self.client.put(url).send()?;
+        self.client.put(url).headers(self.headers.clone()).send()?;
         Ok(())
+    }
+
+    fn get(&self, url: String) -> Result<Response> {
+        Ok(self.client.get(url).headers(self.headers.clone()).send()?)
+    }
+
+    fn post<T: Into<Body>>(&self, url: String, body: T) -> Result<Response> {
+        Ok(self
+            .client
+            .post(url)
+            .body(body)
+            .headers(self.headers.clone())
+            .send()?)
     }
 
     /// Get device information
     pub fn info(&self) -> Result<DeviceInfo> {
         let url = format!("{}/info", self.url_pfx);
-        let body = self.client.get(url).send()?.text()?;
+        let body = self.get(url)?.text()?;
         Ok(serde_json::from_str(&body)?)
     }
 
     /// Get version
     pub fn version(&self) -> Result<String> {
         let url = format!("{}/version", self.url_pfx);
-        let response = self.client.get(url).send()?;
+        let response = self.get(url)?;
         let body = response.text()?;
         Ok(body)
     }
@@ -105,7 +129,7 @@ impl Rest {
     /// Get drives
     pub fn drives(&self) -> Result<String> {
         let url = format!("{}/drives", self.url_pfx);
-        let response = self.client.get(url).send()?;
+        let response = self.get(url)?;
         let body = response.text()?;
         Ok(body)
     }
@@ -115,7 +139,7 @@ impl Rest {
     pub fn load_prg(&self, prg_data: &[u8]) -> Result<()> {
         debug!("Load PRG file of {} bytes", prg_data.len());
         let url = format!("{}/runners:load_prg", self.url_pfx);
-        self.client.post(url).body(prg_data.to_vec()).send()?;
+        self.post(url, prg_data.to_vec())?;
         Ok(())
     }
 
@@ -125,7 +149,7 @@ impl Rest {
     pub fn run_prg(&self, data: &[u8]) -> Result<()> {
         debug!("Run PRG file of {} bytes", data.len());
         let url = format!("{}/runners:run_prg", self.url_pfx);
-        self.client.post(url).body(data.to_vec()).send()?;
+        self.post(url, data.to_vec())?;
         Ok(())
     }
 
@@ -137,7 +161,7 @@ impl Rest {
     pub fn run_crt(&self, data: &[u8]) -> Result<()> {
         debug!("Run CRT file of {} bytes", data.len());
         let url = format!("{}/runners:run_crt", self.url_pfx);
-        self.client.post(url).body(data.to_vec()).send()?;
+        self.post(url, data.to_vec())?;
         Ok(())
     }
 
@@ -188,7 +212,7 @@ impl Rest {
             warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
         }
         let url = format!("{}/machine:writemem?address={:x}", self.url_pfx, address);
-        self.client.post(url).body(data.to_vec()).send()?;
+        self.post(url, data.to_vec())?;
         debug!("Wrote {} byte(s) to {:#06x}", data.len(), address);
         Ok(())
     }
@@ -256,7 +280,7 @@ impl Rest {
             "{}/machine:readmem?address={:x}&length={}",
             self.url_pfx, address, length
         );
-        let bytes = self.client.get(url).send()?.bytes()?.to_vec();
+        let bytes = self.get(url)?.bytes()?.to_vec();
         debug!("Read {length} byte(s) from {address:#06x}");
         Ok(bytes)
     }
@@ -267,14 +291,14 @@ impl Rest {
             Some(songnr) => format!("{}/runners:sidplay?songnr={}", self.url_pfx, songnr),
             None => format!("{}/runners:sidplay", self.url_pfx),
         };
-        self.client.post(url).body(siddata.to_vec()).send()?;
+        self.post(url, siddata.to_vec())?;
         Ok(())
     }
 
     /// Play amiga MOD file
     pub fn mod_play(&self, moddata: &[u8]) -> Result<()> {
         let url = format!("{}/runners:modplay", self.url_pfx);
-        self.client.post(url).body(moddata.to_vec()).send()?;
+        self.post(url, moddata.to_vec())?;
         Ok(())
     }
 
@@ -299,7 +323,7 @@ impl Rest {
     /// Get drive list
     pub fn drive_list(&self) -> Result<HashMap<String, Drive>> {
         let url = format!("{}/drives", self.url_pfx);
-        let response = self.client.get(url).send()?;
+        let response = self.get(url)?;
         let nested: DriveList = response.json()?;
         let drives = nested
             .drives
@@ -327,7 +351,12 @@ impl Rest {
             .map_err(|e| anyhow!("disk image error: {e}"))?
             .text("mode", mount_mode.to_string())
             .text("type", disktype.to_string());
-        let response = self.client.post(url).multipart(form).send()?;
+        let response = self
+            .client
+            .post(url)
+            .multipart(form)
+            .headers(self.headers.clone())
+            .send()?;
 
         // should not trigger by normal operation and indicates a problem
         // with the request or the server
