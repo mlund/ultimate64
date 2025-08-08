@@ -77,7 +77,7 @@ pub struct Rest {
 impl Rest {
     /// Create new Rest instance
     pub fn new(host: &Host, password: Option<String>) -> Result<Self> {
-        let mut headers = HeaderMap::new();
+        let mut headers = HeaderMap::default();
         if let Some(pw) = password {
             headers.insert("X-password", HeaderValue::from_str(pw.as_str())?);
         }
@@ -89,12 +89,14 @@ impl Rest {
         })
     }
 
-    /// Check if Response is permitted, i.e. not forbidden (HTTP 403)
+    /// Check sanity of response
     fn check_response(response: &Response) -> Result<()> {
-        ensure!(
-            response.status() != StatusCode::FORBIDDEN,
-            "access forbidden: check password or device settings"
-        );
+        // Handle a few specific status codes
+        match response.status() {
+            StatusCode::FORBIDDEN => bail!("access denied: check password or device settings"),
+            StatusCode::NOT_IMPLEMENTED => bail!("command unavailable on this Ultimate device"),
+            _ => {}
+        }
         ensure!(
             response.status().is_success(),
             "request failed with status: {}",
@@ -282,7 +284,7 @@ impl Rest {
         const BASIN_ADDR: u16 = 0xa7ae; // BASIC input routine in Kernal ROM
         const VECTOR_ADDR: u16 = 0x0302; // System vector
         let word = self.read_le_word(VECTOR_ADDR)?;
-        log::debug!("Word at {VECTOR_ADDR:#06x} is {word:#06x}");
+        debug!("Word at {VECTOR_ADDR:#06x} is {word:#06x}");
         ensure!(
             word != 0,
             "BASIC prompt is not ready, vector at {VECTOR_ADDR:#06x} is zero"

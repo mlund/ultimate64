@@ -306,9 +306,10 @@ fn do_main() -> Result<()> {
 
             if run {
                 const BASIC_LOAD_ADDR: u16 = 0x0801;
-                match address {
-                    BASIC_LOAD_ADDR => ultimate.type_text("run\n")?,
-                    _ => ultimate.type_text(&format!("sys{address}\n"))?,
+                if address == BASIC_LOAD_ADDR {
+                    ultimate.type_text("run\n")?;
+                } else {
+                    ultimate.type_text(&format!("sys{address}\n"))?
                 }
             }
         }
