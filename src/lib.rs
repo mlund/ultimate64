@@ -233,13 +233,14 @@ impl Rest {
     }
 
     /// Emulate keyboard input
-    /// 
+    ///
     /// Done by injecting PETSCII bytes to the C64 input buffer.
     pub fn type_text(&self, s: &str) -> Result<()> {
         debug!("Emulating keyboard typing: {s}");
-        const TAIL_PTR: u16 = 0x00c5;
-        const HEAD_PTR: u16 = 0x00c6;
-        const BUFFER_BASE: u16 = 0x0277;
+        // From the C64 Programmers Reference Guide, page 315-316:
+        const KEYBOARD_LSTX: u16 = 0xc5; // Current key pressed (64 = no key pressed)
+        const KEYBOARD_NDX: u16 = 0xc6; // Number of characters in keyboard buffer
+        const KEYBOARD_BUFFER: u16 = 0x277; // Keyboard buffer queue (10 bytes)
 
         ensure!(
             self.basic_ready()?,
@@ -254,9 +255,9 @@ impl Rest {
 
         // C64 input buffer is limited to 10 characters
         for chunk in petscii.chunks(10) {
-            self.write_mem(TAIL_PTR, &[0, 0])?; // clear keyboard buffer
-            self.write_mem(BUFFER_BASE, chunk)?; // write PETSCII to buffer
-            self.write_mem(HEAD_PTR, &[chunk.len() as u8])?; // trigger typing
+            self.write_mem(KEYBOARD_LSTX, &[0, 0])?; // clear keyboard buffer
+            self.write_mem(KEYBOARD_BUFFER, chunk)?; // write PETSCII to buffer
+            self.write_mem(KEYBOARD_NDX, &[chunk.len() as u8])?; // trigger typing
             sleep(Duration::from_millis(20)); // wait for C64 (may not be needed)
         }
         Ok(())
