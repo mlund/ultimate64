@@ -13,10 +13,10 @@ use anyhow::{anyhow, bail, ensure, Ok, Result};
 use core::fmt::Display;
 use log::{debug, warn};
 use reqwest::{
-    blocking::Body,
+    blocking::{Body, Client, Response},
     header::{HeaderMap, HeaderValue},
+    StatusCode,
 };
-use reqwest::{blocking::Client, blocking::Response};
 use std::{collections::HashMap, path::Path, thread::sleep, time::Duration};
 use url::Host;
 
@@ -61,7 +61,7 @@ impl Display for DeviceInfo {
 /// # Examples
 /// ~~~ rust, ignore
 /// use ultimate64::Rest;
-/// let ultimate = Rest::new("192.168.1.10");
+/// let ultimate = Rest::new("192.168.1.10", None).unwrap();
 /// ultimate.reset();
 /// ~~~
 #[derive(Debug)]
@@ -76,15 +76,12 @@ pub struct Rest {
 
 impl Rest {
     /// Create new Rest instance
-    ///
-    /// # Arguments
-    ///
-    /// * `host` - Hostname or IP address of Ultimate-64 of Ultimate-II
     pub fn new(host: &Host, password: Option<String>) -> Result<Self> {
         let mut headers = HeaderMap::new();
-        if let Some(pwd) = password {
-            headers.insert("X-password", HeaderValue::from_str(pwd.as_str())?);
+        if let Some(pw) = password {
+            headers.insert("X-password", HeaderValue::from_str(pw.as_str())?);
         }
+
         Ok(Self {
             client: Client::new(),
             url_pfx: format!("http://{host}/v1"),
@@ -92,23 +89,42 @@ impl Rest {
         })
     }
 
-    fn put(&self, path: &str) -> Result<()> {
-        let url = format!("{}/{}", self.url_pfx, path);
-        self.client.put(url).headers(self.headers.clone()).send()?;
+    /// Check if Response is permitted, i.e. not forbidden (HTTP 403)
+    fn check_response(response: &Response) -> Result<()> {
+        ensure!(
+            response.status() != StatusCode::FORBIDDEN,
+            "access forbidden: check password or device settings"
+        );
+        ensure!(
+            response.status().is_success(),
+            "request failed with status: {}",
+            response.status()
+        );
         Ok(())
     }
 
+    fn put(&self, path: &str) -> Result<Response> {
+        let url = format!("{}/{}", self.url_pfx, path);
+        let response = self.client.put(url).headers(self.headers.clone()).send()?;
+        Self::check_response(&response)?;
+        Ok(response)
+    }
+
     fn get(&self, url: String) -> Result<Response> {
-        Ok(self.client.get(url).headers(self.headers.clone()).send()?)
+        let response = self.client.get(url).headers(self.headers.clone()).send()?;
+        Self::check_response(&response)?;
+        Ok(response)
     }
 
     fn post<T: Into<Body>>(&self, url: String, body: T) -> Result<Response> {
-        Ok(self
+        let response = self
             .client
             .post(url)
             .body(body)
             .headers(self.headers.clone())
-            .send()?)
+            .send()?;
+        Self::check_response(&response)?;
+        Ok(response)
     }
 
     /// Get device information
@@ -351,12 +367,15 @@ impl Rest {
             .map_err(|e| anyhow!("disk image error: {e}"))?
             .text("mode", mount_mode.to_string())
             .text("type", disktype.to_string());
+
         let response = self
             .client
             .post(url)
             .multipart(form)
             .headers(self.headers.clone())
             .send()?;
+
+        Self::check_response(&response)?;
 
         // should not trigger by normal operation and indicates a problem
         // with the request or the server
