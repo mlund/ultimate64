@@ -110,13 +110,15 @@ impl Rest {
         Ok(response)
     }
 
-    fn get(&self, url: String) -> Result<Response> {
+    fn get(&self, path: &str) -> Result<Response> {
+        let url = format!("{}/{}", self.url_pfx, path);
         let response = self.client.get(url).headers(self.headers.clone()).send()?;
         Self::check_response(&response)?;
         Ok(response)
     }
 
-    fn post<T: Into<Body>>(&self, url: String, body: T) -> Result<Response> {
+    fn post<T: Into<Body>>(&self, path: &str, body: T) -> Result<Response> {
+        let url = format!("{}/{}", self.url_pfx, path);
         let response = self
             .client
             .post(url)
@@ -129,23 +131,20 @@ impl Rest {
 
     /// Get device information
     pub fn info(&self) -> Result<DeviceInfo> {
-        let url = format!("{}/info", self.url_pfx);
-        let body = self.get(url)?.text()?;
+        let body = self.get("info")?.text()?;
         Ok(serde_json::from_str(&body)?)
     }
 
     /// Get version
     pub fn version(&self) -> Result<String> {
-        let url = format!("{}/version", self.url_pfx);
-        let response = self.get(url)?;
+        let response = self.get("version")?;
         let body = response.text()?;
         Ok(body)
     }
 
     /// Get drives
     pub fn drives(&self) -> Result<String> {
-        let url = format!("{}/drives", self.url_pfx);
-        let response = self.get(url)?;
+        let response = self.get("drives")?;
         let body = response.text()?;
         Ok(body)
     }
@@ -154,8 +153,7 @@ impl Rest {
     /// The machine resets, and loads the attached program into memory using DMA.
     pub fn load_prg(&self, prg_data: &[u8]) -> Result<()> {
         debug!("Load PRG file of {} bytes", prg_data.len());
-        let url = format!("{}/runners:load_prg", self.url_pfx);
-        self.post(url, prg_data.to_vec())?;
+        self.post("runners:load_prg", prg_data.to_vec())?;
         Ok(())
     }
 
@@ -164,8 +162,7 @@ impl Rest {
     /// The machine resets, and loads the attached program into memory using DMA.
     pub fn run_prg(&self, data: &[u8]) -> Result<()> {
         debug!("Run PRG file of {} bytes", data.len());
-        let url = format!("{}/runners:run_prg", self.url_pfx);
-        self.post(url, data.to_vec())?;
+        self.post("runners:run_prg", data.to_vec())?;
         Ok(())
     }
 
@@ -176,8 +173,7 @@ impl Rest {
     /// It does not alter the configuration of the Ultimate.
     pub fn run_crt(&self, data: &[u8]) -> Result<()> {
         debug!("Run CRT file of {} bytes", data.len());
-        let url = format!("{}/runners:run_crt", self.url_pfx);
-        self.post(url, data.to_vec())?;
+        self.post("runners:run_crt", data.to_vec())?;
         Ok(())
     }
 
@@ -227,8 +223,8 @@ impl Rest {
         if matches!(address, 0 | 1) {
             warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
         }
-        let url = format!("{}/machine:writemem?address={:x}", self.url_pfx, address);
-        self.post(url, data.to_vec())?;
+        let path = format!("machine:writemem?address={:x}", address);
+        self.post(&path, data.to_vec())?;
         debug!("Wrote {} byte(s) to {:#06x}", data.len(), address);
         Ok(())
     }
@@ -292,29 +288,25 @@ impl Rest {
         if matches!(address, 0x0000 | 0x0001) {
             warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
         }
-        let url = format!(
-            "{}/machine:readmem?address={:x}&length={}",
-            self.url_pfx, address, length
-        );
-        let bytes = self.get(url)?.bytes()?.to_vec();
+        let path = format!("machine:readmem?address={:x}&length={}", address, length);
+        let bytes = self.get(path.as_str())?.bytes()?.to_vec();
         debug!("Read {length} byte(s) from {address:#06x}");
         Ok(bytes)
     }
 
     /// Play SID file - if no `songnr` is provided, the default song is played.
     pub fn sid_play(&self, siddata: &[u8], songnr: Option<u8>) -> Result<()> {
-        let url = match songnr {
-            Some(songnr) => format!("{}/runners:sidplay?songnr={}", self.url_pfx, songnr),
-            None => format!("{}/runners:sidplay", self.url_pfx),
+        let path = match songnr {
+            Some(songnr) => format!("runners:sidplay?songnr={}", songnr),
+            None => format!("runners:sidplay"),
         };
-        self.post(url, siddata.to_vec())?;
+        self.post(&path, siddata.to_vec())?;
         Ok(())
     }
 
     /// Play amiga MOD file
     pub fn mod_play(&self, moddata: &[u8]) -> Result<()> {
-        let url = format!("{}/runners:modplay", self.url_pfx);
-        self.post(url, moddata.to_vec())?;
+        self.post("runners:modplay", moddata.to_vec())?;
         Ok(())
     }
 
@@ -338,8 +330,7 @@ impl Rest {
 
     /// Get drive list
     pub fn drive_list(&self) -> Result<HashMap<String, Drive>> {
-        let url = format!("{}/drives", self.url_pfx);
-        let response = self.get(url)?;
+        let response = self.get("drives")?;
         let nested: DriveList = response.json()?;
         let drives = nested
             .drives
