@@ -224,7 +224,7 @@ impl Rest {
     pub fn write_mem(&self, address: u16, data: &[u8]) -> Result<()> {
         check_address_overflow(address, data.len() as u16)?;
         if matches!(address, 0 | 1) {
-            warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
+            warn!("DMA cannot access internal CPU registers at address 0 and 1");
         }
         let path = format!("machine:writemem?address={address:x}");
         self.post(&path, data.to_vec())?;
@@ -233,6 +233,8 @@ impl Rest {
     }
 
     /// Emulate keyboard input
+    /// 
+    /// Done by injecting PETSCII bytes to the C64 input buffer.
     pub fn type_text(&self, s: &str) -> Result<()> {
         debug!("Emulating keyboard typing: {s}");
         const TAIL_PTR: u16 = 0x00c5;
@@ -260,7 +262,7 @@ impl Rest {
         Ok(())
     }
 
-    /// Read word (2 bytes) from memory and interpret as little-endian
+    /// Read word (2 bytes) from memory and interpret as little endian
     pub fn read_le_word(&self, address: u16) -> Result<u16> {
         let bytes: [u8; 2] = self
             .read_mem(address, 2)?
