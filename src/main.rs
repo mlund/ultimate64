@@ -47,6 +47,7 @@ struct Cli {
     #[clap(long, short = 'v', action)]
     pub verbose: bool,
     /// Optional password for Ultimate device
+    #[clap(env = "ULTIMATE_PASSWORD")]
     #[clap(long, short = 'p')]
     pub password: Option<String>,
 }
