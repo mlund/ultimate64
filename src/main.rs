@@ -3,9 +3,11 @@ use clap::builder::styling::{AnsiColor, Effects, Styles};
 use clap::{Parser, Subcommand};
 use log::debug;
 use parse_int::parse;
-use ultimate64::aux;
-use ultimate64::drives::Drive;
-use ultimate64::{drives, Rest};
+use ultimate64::{
+    aux,
+    drives::{self, Drive},
+    Rest,
+};
 extern crate pretty_env_logger;
 use pretty_env_logger::env_logger::DEFAULT_FILTER_ENV;
 use prettytable::{format, Cell, Row, Table};
@@ -13,6 +15,9 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use url::Host;
+
+/// BASIC load address on C64
+const BASIC_LOAD_ADDR: u16 = 0x0801;
 
 // Clap 4 colors: https://github.com/clap-rs/clap/issues/3234#issuecomment-1783820412
 fn styles() -> Styles {
@@ -305,7 +310,6 @@ fn do_main() -> Result<()> {
             let (address, _) = ultimate.load_data(&data, address)?;
 
             if run {
-                const BASIC_LOAD_ADDR: u16 = 0x0801;
                 if address == BASIC_LOAD_ADDR {
                     ultimate.type_text("run\n")?;
                 } else {

@@ -295,7 +295,7 @@ impl Rest {
     /// Read `length` bytes from `address`
     pub fn read_mem(&self, address: u16, length: u16) -> Result<Vec<u8>> {
         check_address_overflow(address, length)?;
-        if matches!(address, 0x0000 | 0x0001) {
+        if matches!(address, 0 | 1) {
             warn!("Warning: DMA cannot access internal CPU registers at address 0 and 1");
         }
         let path = format!("machine:readmem?address={address:x}&length={length}");
