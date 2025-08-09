@@ -37,3 +37,8 @@ opt-level = "z"   # Optimize for size.
 lto = true        # Link-time optimization.
 codegen-units = 1 # Compile the entire crate as a single unit.
 panic = "abort"   # Abort on panic.
+
+[dev-dependencies]
+byteorder = "1.5.0"
+image = "0.25.6"
+socket2 = "0.6.0"
