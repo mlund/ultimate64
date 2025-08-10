@@ -39,32 +39,13 @@ static COLORS: &[[u8; 3]] = &[
     [0xB2, 0xB2, 0xB2],
 ];
 
-static _COLORS2: &[[u8; 3]] = &[
-    [0xF0, 0xF0, 0xF0],
-    [0x00, 0x00, 0x00],
-    [0x8D, 0x2F, 0x34],
-    [0x6A, 0xD4, 0xCD],
-    [0x98, 0x35, 0xA4],
-    [0x4C, 0xB4, 0x42],
-    [0x2C, 0x29, 0xB1],
-    [0xA0, 0x90, 0x00],
-    [0x98, 0x4E, 0x20],
-    [0x5B, 0x38, 0x00],
-    [0xD1, 0x67, 0x6D],
-    [0x99, 0x99, 0x99],
-    [0x66, 0x66, 0x66],
-    [0x20, 0xA0, 0x20],
-    [0x20, 0x20, 0xA0],
-    [0x33, 0x33, 0x33],
-];
-
 /// Takes a single snap-shot of the C64 screen
 ///
 /// If no file path is given, the snapshot will be printed to the console.
 pub fn take_snapshot(url: &Url, image_file: Option<&Path>, scale: Option<u32>) -> Result<()> {
     let udp_socket = get_socket(url)?;
     let frame = capture_frame(udp_socket)?;
-    let img = make_image(&frame, scale)?;
+    let img = make_scaled_image(&frame, scale)?;
 
     if let Some(path) = image_file {
         img.save(path)
@@ -141,7 +122,7 @@ fn bit15_is_set(buf: &[u8]) -> bool {
             != 0
 }
 
-fn make_image(frame: &[u8], scale: Option<u32>) -> Result<ImageBuffer<Rgb<u8>, Vec<u8>>> {
+pub fn make_image(frame: &[u8]) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     const IMAGE_WIDTH: usize = 384;
     const BYTES_PER_ROW: usize = IMAGE_WIDTH / 2;
     let rows = frame.len() / BYTES_PER_ROW;
@@ -156,12 +137,17 @@ fn make_image(frame: &[u8], scale: Option<u32>) -> Result<ImageBuffer<Rgb<u8>, V
             let (lo, hi) = ((b & 0xF) as usize, (b >> 4) as usize);
             let c_lo = COLORS[lo];
             let c_hi = COLORS[hi];
-
             img.put_pixel((2 * x) as u32, y as u32, Rgb(c_lo));
             img.put_pixel((2 * x + 1) as u32, y as u32, Rgb(c_hi));
+
             i += 1;
         }
     }
+    img
+}
+
+fn make_scaled_image(frame: &[u8], scale: Option<u32>) -> Result<ImageBuffer<Rgb<u8>, Vec<u8>>> {
+    let img = make_image(frame);
     let scale = scale.unwrap_or(1);
     let img = image::imageops::resize(
         &img,

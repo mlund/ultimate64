@@ -165,7 +165,7 @@ enum Commands {
         #[clap(long, short = 'o', default_value = None)]
         output: Option<PathBuf>,
         /// URL to streaming Ultimate device
-        #[clap(long, default_value = "http://239.0.1.64:11000")]
+        #[clap(long, default_value = "udp://239.0.1.64:11000")]
         #[arg(value_parser = Url::parse)]
         url: Url,
         /// Scale image when outputting to file

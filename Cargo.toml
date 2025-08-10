@@ -40,3 +40,6 @@ lto = true        # Link-time optimization.
 codegen-units = 1 # Compile the entire crate as a single unit.
 panic = "abort"   # Abort on panic.
 
+[dev-dependencies]
+eframe = "0.32.0"
+
