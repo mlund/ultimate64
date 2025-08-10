@@ -392,7 +392,7 @@ impl Rest {
         // a short delay is needed to allow the reset to complete
         if run {
             self.reset()?;
-            sleep(Duration::from_secs(2));
+            sleep(Duration::from_secs(3));
             self.type_text("load\"*\",8,1\nrun\n")?;
         }
         Ok(())
