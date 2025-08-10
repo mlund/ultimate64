@@ -53,6 +53,11 @@ ru64 screenshot -o screen.png          # take screenshot via VIC stream
 
 Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
 
+### Experimental GUI
+
+An experimental, cross-platform GUI is available with `cargo run --release --example egui`. Requires a Rust installation, see above. Currently only a VIC stream viewer is implemented.
+
+
 # Features
 
 - [x] Compiled, small, and cross platform with no external dependencies

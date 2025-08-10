@@ -1,7 +1,7 @@
 // Show VIC stream in egui
 
-use eframe::egui::{ColorImage, Context, TextureOptions};
-use eframe::{egui, App, NativeOptions};
+use eframe::egui::{CentralPanel, ColorImage, Context, TextureOptions};
+use eframe::{egui, App, Frame, NativeOptions};
 use image::{ImageBuffer, Rgb};
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -15,7 +15,7 @@ struct VideoApp {
 }
 
 impl App for VideoApp {
-    fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         if let Some(frame) = self.latest_frame.lock().unwrap().as_ref() {
             let color_image = ColorImage::from_rgb(
                 [frame.width() as usize, frame.height() as usize],
@@ -30,16 +30,12 @@ impl App for VideoApp {
             }
         }
 
-        egui::CentralPanel::default().show(ctx, |ui| {
-            if let Some(tex) = &self.texture_handle {
-                ui.image(tex);
-            } else {
-                ui.label("Waiting for video frames...");
-            }
+        CentralPanel::default().show(ctx, |ui| match &self.texture_handle {
+            Some(tex) => ui.image(tex),
+            _ => ui.label("Waiting for video frames..."),
         });
 
-        // Keep redrawing for live video
-        ctx.request_repaint();
+        ctx.request_repaint(); // Keep redrawing for live video
     }
 }
 
