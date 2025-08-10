@@ -48,6 +48,7 @@ ru64 poke 0x0400 0x20 --fill 1000      # fill memory
 ru64 type $'print "hello"\n'           # Emulate keyboard typing
 ru64 pause                             # pause machine
 ru64 reset                             # reset machine
+ru64 screenshot -o screen.png          # take screenshot via VIC stream
 ~~~
 
 Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
@@ -55,18 +56,20 @@ Addresses can be hexadecimal (`0x1000`) or decimal (`4096`).
 # Features
 
 - [x] Compiled, small, and cross platform with no external dependencies
-- [x] Can be used either as a CLI tool or as a library
-- [x] Modern CLI with subcommands
-- [x] First class memory safety due to Rust
-- [x] Excellent error handling; error messages; and input validation
+- [x] Mount and run external disk images
+- [x] Play SID and MOD files
+- [x] Remote screenshots to disk or, if support by terminal, the console
+- [x] Emulate keyboard typing w. unicode to PETSCII conversion
 - [x] Convenient decimal, hexadecimal, and binary input
 - [x] Bitwise operations for memory manipulation
-- [x] Emulate keyboard typing w. unicode to PETSCII conversion
-- [x] Mount and run external disk images
 - [x] 6502 disassembly
 - [x] Load address detection
-- [x] Precompiled binaries for Linux and Windows (mac users should use Cargo, see above)
 - [x] Network password support
+- [x] First class memory safety due to Rust
+- [x] Modern CLI with subcommands
+- [x] Excellent error handling; error messages; and input validation
+- [x] Can be used either as a CLI tool or as a library
+- [x] Precompiled binaries for Linux and Windows (mac users should use `cargo`, see above)
 
 ## Todo
 
