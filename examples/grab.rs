@@ -68,12 +68,19 @@ fn main() -> io::Result<()> {
     udp_socket.set_read_timeout(Some(Duration::from_millis(200)))?;
 
     let mut buf = [0u8; 1024];
+    const END_OF_FRAME: u16 = 1 << 15;
+    const LINE_NUMBER_POS: usize = 4;
 
     // initial receive loop (mirrors the Python script behavior)
     loop {
+        // Parse header
         match udp_socket.recv_from(&mut buf) {
             Ok((len, _addr)) => {
-                if len >= 8 && LittleEndian::read_u16(&buf[4..6]).bitand(0x8000) != 0 {
+                if len >= 8
+                    && LittleEndian::read_u16(&buf[LINE_NUMBER_POS..LINE_NUMBER_POS + 2])
+                        .bitand(END_OF_FRAME)
+                        != 0
+                {
                     break;
                 }
             }
@@ -90,16 +97,17 @@ fn main() -> io::Result<()> {
     loop {
         let (len, _addr) = match udp_socket.recv_from(&mut buf) {
             Ok(v) => v,
-            Err(ref e) if e.kind() == ErrorKind::WouldBlock || e.kind() == ErrorKind::TimedOut => {
-                continue
-            }
+            Err(ref e) if e.kind() == ErrorKind::TimedOut => continue,
             Err(e) => return Err(e),
         };
 
         const HEADER_LEN: usize = 12;
         if len >= HEADER_LEN {
             frame.extend_from_slice(&buf[HEADER_LEN..len]);
-            if LittleEndian::read_u16(&buf[4..6]).bitand(0x8000) != 0 {
+            if LittleEndian::read_u16(&buf[LINE_NUMBER_POS..LINE_NUMBER_POS + 2])
+                .bitand(END_OF_FRAME)
+                != 0
+            {
                 break;
             }
         }
@@ -129,6 +137,8 @@ fn main() -> io::Result<()> {
         }
     }
 
+    println!("Frame size = {}", frame.len());
+
     let scale_factor = 3;
     let scaled = image::imageops::resize(
         &img,
@@ -137,7 +147,8 @@ fn main() -> io::Result<()> {
         FilterType::Nearest, // keeps pixel edges crisp
     );
 
-    scaled.save("grab.png")
+    scaled
+        .save("grab.png")
         .map_err(|e| io::Error::new(ErrorKind::Other, e))?;
 
     Ok(())
