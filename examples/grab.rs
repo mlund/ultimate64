@@ -1,17 +1,5 @@
-// udp_multicast_grab.rs
-// Rust port of the provided Python script.
-//
-// Cargo.toml dependencies (add to your Cargo.toml):
-// [dependencies]
-// image = "0.24"
-// socket2 = "0.4"
-// byteorder = "1.4"
-//
-// Build with: cargo build --release
-// Run with: cargo run --release -- <numFrames>
-
 use byteorder::{ByteOrder, LittleEndian};
-use image::{ImageBuffer, Rgb};
+use image::{imageops::FilterType, ImageBuffer, Rgb};
 use socket2::{Domain, Protocol, Socket, Type};
 use std::io::{self, ErrorKind};
 use std::net::{Ipv4Addr, SocketAddrV4, UdpSocket};
@@ -85,14 +73,11 @@ fn main() -> io::Result<()> {
     loop {
         match udp_socket.recv_from(&mut buf) {
             Ok((len, _addr)) => {
-                if len >= 8 {
-                    // struct.unpack("<HHHH", data[0:8]) -> seq, frame, lin, width
-                    if LittleEndian::read_u16(&buf[4..6]).bitand(0x8000) != 0 {
-                        break;
-                    }
+                if len >= 8 && LittleEndian::read_u16(&buf[4..6]).bitand(0x8000) != 0 {
+                    break;
                 }
             }
-            Err(ref e) if e.kind() == ErrorKind::WouldBlock || e.kind() == ErrorKind::TimedOut => {
+            Err(ref e) if e.kind() == ErrorKind::TimedOut => {
                 // timeout; continue trying
                 continue;
             }
@@ -142,10 +127,18 @@ fn main() -> io::Result<()> {
             img.put_pixel((2 * x + 1) as u32, y as u32, Rgb(c_hi));
             i += 1;
         }
-
-        img.save("grab.png")
-            .map_err(|e| io::Error::new(ErrorKind::Other, e))?;
     }
+
+    let scale_factor = 3;
+    let scaled = image::imageops::resize(
+        &img,
+        img.width() * scale_factor,
+        img.height() * scale_factor,
+        FilterType::Nearest, // keeps pixel edges crisp
+    );
+
+    scaled.save("grab.png")
+        .map_err(|e| io::Error::new(ErrorKind::Other, e))?;
 
     Ok(())
 }
