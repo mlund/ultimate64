@@ -16,20 +16,22 @@ categories = ["command-line-utilities"]
 name = "ru64"
 path = "src/main.rs"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-anyhow = "1.0"
-clap = { version = "4.0", features = ["derive", "env"] }
+anyhow = { version = "1.0", default-features = false }
+clap = { version = "4.0", features = ["derive", "env", "std", "color", "help"], default-features = false }
 parse_int = "0.6"
-reqwest = { version = "0.11", features = ["blocking", "json", "multipart"] }
-serde = { version = "1.0", features = ["derive"] }
+reqwest = { version = "0.11", features = ["blocking", "json", "multipart"], default-features = false }
+serde = { version = "1.0", features = ["derive"], default-features = false }
 serde_json = "1.0"
-disasm6502 = "0.2"
-log = "0.4"
-pretty_env_logger = "0.5"
-url = "2.5"
-prettytable = "0.10.0"
+disasm6502 = { version = "0.2", default-features = false }
+log = { version = "0.4", default-features = false }
+pretty_env_logger = { version = "0.5", default-features = false }
+url = { version = "2.5", default-features = false }
+prettytable = { version = "0.10.0", default-features = false }
+byteorder = "1.5.0"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] } 
+socket2 = "0.6"
+viuer = { version = "0.9", default-features = false }
 
 [profile.release]
 strip = true      # Automatically strip symbols from the binary.
@@ -38,7 +40,3 @@ lto = true        # Link-time optimization.
 codegen-units = 1 # Compile the entire crate as a single unit.
 panic = "abort"   # Abort on panic.
 
-[dev-dependencies]
-byteorder = "1.5.0"
-image = "0.25.6"
-socket2 = "0.6.0"

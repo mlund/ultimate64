@@ -6,7 +6,7 @@ use parse_int::parse;
 use ultimate64::{
     aux,
     drives::{self, Drive},
-    Rest,
+    vicstream, Rest,
 };
 extern crate pretty_env_logger;
 use pretty_env_logger::env_logger::DEFAULT_FILTER_ENV;
@@ -14,7 +14,7 @@ use prettytable::{format, Cell, Row, Table};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use url::Host;
+use url::{Host, Url};
 
 /// BASIC load address on C64
 const BASIC_LOAD_ADDR: u16 = 0x0801;
@@ -159,6 +159,19 @@ enum Commands {
         /// PRG or CRT file to load and run
         file: PathBuf,
     },
+    /// Take C64 screenshot via VIC stream
+    Screenshot {
+        /// Optionally output to file (png, jpg), otherwise attempt to print on console
+        #[clap(long, short = 'o', default_value = None)]
+        output: Option<PathBuf>,
+        /// URL to streaming Ultimate device
+        #[clap(long, default_value = "http://239.0.1.64:11000")]
+        #[arg(value_parser = Url::parse)]
+        url: Url,
+        /// Scale image when outputting to file
+        #[clap(long, short = 'x', default_value_t = 1)]
+        scale: u32,
+    },
     /// Emulate keyboard input
     Type {
         /// Unicode text to type - will be converted to PETSCII
@@ -199,6 +212,40 @@ fn do_main() -> Result<()> {
             let info = ultimate.info()?;
             println!("{info}");
         }
+        Commands::Load {
+            file,
+            address,
+            run,
+            reset,
+        } => {
+            let data = fs::read(file)?;
+
+            if reset {
+                ultimate.reset()?;
+            }
+
+            let (address, _) = ultimate.load_data(&data, address)?;
+
+            if run {
+                if address == BASIC_LOAD_ADDR {
+                    ultimate.type_text("run\n")?;
+                } else {
+                    ultimate.type_text(&format!("sys{address}\n"))?
+                }
+            }
+        }
+        Commands::Menu => {
+            ultimate.menu()?;
+        }
+        Commands::Mount {
+            file,
+            drive: drive_id,
+            mode,
+            run,
+        } => {
+            has_disk_image_extension(&file)?;
+            ultimate.mount_disk_image(&file, drive_id, mode, run)?;
+        }
         Commands::Pause => {
             ultimate.pause()?;
         }
@@ -221,6 +268,15 @@ fn do_main() -> Result<()> {
                     print!("{byte:#04x} ");
                 });
                 println!()
+            }
+        }
+        Commands::Play { file, songnr } => {
+            let data = fs::read(&file)?;
+            let ext = aux::get_extension(&file).unwrap_or_default();
+            match ext.as_str() {
+                "sid" => ultimate.sid_play(&data, songnr)?,
+                "mod" => ultimate.mod_play(&data)?,
+                _ => bail!("Unsupported music file format: {ext}"),
             }
         }
         Commands::Poke {
@@ -271,51 +327,11 @@ fn do_main() -> Result<()> {
                 _ => ultimate.run_prg(&data)?,
             }
         }
-        Commands::Play { file, songnr } => {
-            let data = fs::read(&file)?;
-            let ext = aux::get_extension(&file).unwrap_or_default();
-            match ext.as_str() {
-                "sid" => ultimate.sid_play(&data, songnr)?,
-                "mod" => ultimate.mod_play(&data)?,
-                _ => bail!("Unsupported music file format: {ext}"),
-            }
+        Commands::Screenshot { output, url, scale } => {
+            vicstream::take_snapshot(&url, output.as_deref(), Some(scale))?;
         }
         Commands::Type { text } => {
             ultimate.type_text(&text)?;
-        }
-        Commands::Menu => {
-            ultimate.menu()?;
-        }
-        Commands::Mount {
-            file,
-            drive: drive_id,
-            mode,
-            run,
-        } => {
-            has_disk_image_extension(&file)?;
-            ultimate.mount_disk_image(&file, drive_id, mode, run)?;
-        }
-        Commands::Load {
-            file,
-            address,
-            run,
-            reset,
-        } => {
-            let data = fs::read(file)?;
-
-            if reset {
-                ultimate.reset()?;
-            }
-
-            let (address, _) = ultimate.load_data(&data, address)?;
-
-            if run {
-                if address == BASIC_LOAD_ADDR {
-                    ultimate.type_text("run\n")?;
-                } else {
-                    ultimate.type_text(&format!("sys{address}\n"))?
-                }
-            }
         }
     }
     Ok(())

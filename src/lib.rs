@@ -23,6 +23,7 @@ use url::Host;
 pub mod aux;
 pub mod drives;
 pub mod petscii;
+pub mod vicstream;
 
 /// Ultimate-64 and Ultimate-II device information
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize, PartialEq, Eq)]

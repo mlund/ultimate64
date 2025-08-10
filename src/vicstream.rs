@@ -1,14 +1,23 @@
+//! # VIC stream capturing
+
+use anyhow::{anyhow, bail, ensure, Ok, Result};
 use byteorder::{ByteOrder, LittleEndian};
+use image::DynamicImage;
 use image::{imageops::FilterType, ImageBuffer, Rgb};
 use socket2::{Domain, Protocol, Socket, Type};
-use std::io::{self, ErrorKind};
+use std::io::ErrorKind;
 use std::net::{Ipv4Addr, SocketAddrV4, UdpSocket};
 use std::ops::BitAnd;
+use std::path::Path;
+use std::str::FromStr;
 use std::time::Duration;
-// use anyhow::{Result, Ok};
+use url::Url;
 
+/// End of frame marker (bit 15 set)
 const END_OF_FRAME: u16 = 1 << 15;
+/// Position of line number (two bytes, little-endian) in the VIC frame header
 const LINE_NUMBER_POS: usize = 4;
+/// Header length
 const HEADER_LEN: usize = 12;
 
 static COLORS: &[[u8; 3]] = &[
@@ -49,22 +58,36 @@ static _COLORS2: &[[u8; 3]] = &[
     [0x33, 0x33, 0x33],
 ];
 
-fn main() -> io::Result<()> {
-    let udp_socket = get_socket()?;
+/// Takes a single snap-shot of the C64 screen
+///
+/// If no file path is given, the snapshot will be printed to the console.
+pub fn take_snapshot(url: &Url, image_file: Option<&Path>, scale: Option<u32>) -> Result<()> {
+    let udp_socket = get_socket(url)?;
+    let frame = capture_frame(udp_socket)?;
+    let img = make_image(&frame, scale)?;
 
-    let frame = match capture_frame(udp_socket) {
-        Ok(value) => value,
-        Err(value) => return value,
-    };
-
-    save_png(&frame, None)?;
+    if let Some(path) = image_file {
+        img.save(path)
+            .map_err(|e| anyhow!("Failed to save image: {}", e))?;
+    } else {
+        let conf = viuer::Config {
+            width: Some(60),
+            ..Default::default()
+        };
+        let img = DynamicImage::ImageRgb8(img);
+        viuer::print(&img, &conf)?;
+    }
 
     Ok(())
 }
 
-fn get_socket() -> Result<UdpSocket, io::Error> {
-    let multicast_group = Ipv4Addr::new(239, 0, 1, 64);
-    let listen_addr = SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, 11000);
+pub fn get_socket(url: &Url) -> Result<UdpSocket> {
+    ensure!(url.has_host(), "URL must have a host");
+    let host = url.host_str().unwrap();
+    let port = url.port().unwrap_or(11000);
+    let multicast_group = Ipv4Addr::from_str(host)?;
+    let listen_addr = SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port);
+
     let socket = Socket::new(Domain::IPV4, Type::DGRAM, Some(Protocol::UDP))?;
     socket.set_reuse_address(true)?;
     #[cfg(target_family = "unix")]
@@ -73,14 +96,17 @@ fn get_socket() -> Result<UdpSocket, io::Error> {
     }
     socket.bind(&listen_addr.into())?;
     socket.join_multicast_v4(&multicast_group, &Ipv4Addr::UNSPECIFIED)?;
+
     let udp_socket: UdpSocket = socket.into();
     udp_socket.set_read_timeout(Some(Duration::from_millis(200)))?;
     Ok(udp_socket)
 }
 
-fn capture_frame(udp_socket: UdpSocket) -> Result<Vec<u8>, Result<(), io::Error>> {
+/// Capture single VIC frame
+pub fn capture_frame(udp_socket: UdpSocket) -> Result<Vec<u8>> {
+    use std::result::Result::Ok;
     let mut frame: Vec<u8> = Vec::with_capacity(384 * 272 / 2);
-    let mut buf = [0u8; 1024];
+    let mut buf = [0; 1024];
     loop {
         match udp_socket.recv_from(&mut buf) {
             Ok(_) => {
@@ -88,15 +114,15 @@ fn capture_frame(udp_socket: UdpSocket) -> Result<Vec<u8>, Result<(), io::Error>
                     break;
                 }
             }
-            Err(ref e) if e.kind() == ErrorKind::TimedOut => continue,
-            Err(e) => return Err(Err(e)),
+            Err(e) if e.kind() == ErrorKind::TimedOut => continue,
+            Err(e) => bail!("Failed to receive VIC data: {}", e),
         }
     }
     loop {
         let (len, _addr) = match udp_socket.recv_from(&mut buf) {
             Ok(v) => v,
-            Err(ref e) if e.kind() == ErrorKind::TimedOut => continue,
-            Err(e) => return Err(Err(e)),
+            Err(e) if e.kind() == ErrorKind::TimedOut => continue,
+            Err(e) => bail!("Failed to receive VIC data: {}", e),
         };
 
         if len >= HEADER_LEN {
@@ -115,7 +141,7 @@ fn bit15_is_set(buf: &[u8]) -> bool {
             != 0
 }
 
-fn save_png(frame: &[u8], scale_factor: Option<u32>) -> Result<(), io::Error> {
+fn make_image(frame: &[u8], scale: Option<u32>) -> Result<ImageBuffer<Rgb<u8>, Vec<u8>>> {
     const IMAGE_WIDTH: usize = 384;
     const BYTES_PER_ROW: usize = IMAGE_WIDTH / 2;
     let rows = frame.len() / BYTES_PER_ROW;
@@ -126,7 +152,7 @@ fn save_png(frame: &[u8], scale_factor: Option<u32>) -> Result<(), io::Error> {
             if i >= frame.len() {
                 break;
             }
-            let b = frame[i] as usize;
+            let b = frame[i];
             let (lo, hi) = ((b & 0xF) as usize, (b >> 4) as usize);
             let c_lo = COLORS[lo];
             let c_hi = COLORS[hi];
@@ -136,14 +162,12 @@ fn save_png(frame: &[u8], scale_factor: Option<u32>) -> Result<(), io::Error> {
             i += 1;
         }
     }
-    let scale = scale_factor.unwrap_or(1);
+    let scale = scale.unwrap_or(1);
     let img = image::imageops::resize(
         &img,
         img.width() * scale,
         img.height() * scale,
-        FilterType::Nearest, // keeps pixel edges crisp
+        FilterType::Nearest,
     );
-    img.save("grab.png")
-        .map_err(|e| io::Error::new(ErrorKind::Other, e))?;
-    Ok(())
+    Ok(img)
 }
