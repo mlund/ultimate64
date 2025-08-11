@@ -1,6 +1,6 @@
 //! # VIC stream capturing
 
-use anyhow::{anyhow, bail, ensure, Ok, Result};
+use anyhow::{anyhow, bail, Ok, Result};
 use byteorder::{ByteOrder, LittleEndian};
 use image::DynamicImage;
 use image::{imageops::FilterType, ImageBuffer, Rgb};
@@ -16,27 +16,27 @@ use url::Url;
 /// End of frame marker (bit 15 set)
 const END_OF_FRAME: u16 = 1 << 15;
 /// Position of line number (two bytes, little-endian) in the VIC frame header
-const LINE_NUMBER_POS: usize = 4;
+const LINE_NUM_POS: usize = 4;
 /// Header length
 const HEADER_LEN: usize = 12;
 
-static COLORS: &[[u8; 3]] = &[
-    [0x00, 0x00, 0x00],
-    [0xEF, 0xEF, 0xEF],
-    [0x8D, 0x2F, 0x34],
-    [0x6A, 0xD4, 0xCD],
-    [0x98, 0x35, 0xA4],
-    [0x4C, 0xB4, 0x42],
-    [0x2C, 0x29, 0xB1],
-    [0xEF, 0xEF, 0x5D],
-    [0x98, 0x4E, 0x20],
-    [0x5B, 0x38, 0x00],
-    [0xD1, 0x67, 0x6D],
-    [0x4A, 0x4A, 0x4A],
-    [0x7B, 0x7B, 0x7B],
-    [0x9F, 0xEF, 0x93],
-    [0x6D, 0x6A, 0xEF],
-    [0xB2, 0xB2, 0xB2],
+static COLORS: &[Rgb<u8>] = &[
+    Rgb([0x00, 0x00, 0x00]),
+    Rgb([0xEF, 0xEF, 0xEF]),
+    Rgb([0x8D, 0x2F, 0x34]),
+    Rgb([0x6A, 0xD4, 0xCD]),
+    Rgb([0x98, 0x35, 0xA4]),
+    Rgb([0x4C, 0xB4, 0x42]),
+    Rgb([0x2C, 0x29, 0xB1]),
+    Rgb([0xEF, 0xEF, 0x5D]),
+    Rgb([0x98, 0x4E, 0x20]),
+    Rgb([0x5B, 0x38, 0x00]),
+    Rgb([0xD1, 0x67, 0x6D]),
+    Rgb([0x4A, 0x4A, 0x4A]),
+    Rgb([0x7B, 0x7B, 0x7B]),
+    Rgb([0x9F, 0xEF, 0x93]),
+    Rgb([0x6D, 0x6A, 0xEF]),
+    Rgb([0xB2, 0xB2, 0xB2]),
 ];
 
 /// Takes a single snap-shot of the C64 screen
@@ -45,12 +45,14 @@ static COLORS: &[[u8; 3]] = &[
 pub fn take_snapshot(url: &Url, image_file: Option<&Path>, scale: Option<u32>) -> Result<()> {
     let udp_socket = get_socket(url)?;
     let frame = capture_frame(udp_socket)?;
-    let img = make_scaled_image(&frame, scale)?;
+    let img = make_image(&frame);
+    let img = scale_image(img, scale)?;
 
     if let Some(path) = image_file {
         img.save(path)
             .map_err(|e| anyhow!("Failed to save image: {}", e))?;
     } else {
+        // Print image to console on supported terminal
         let conf = viuer::Config {
             width: Some(60),
             ..Default::default()
@@ -63,8 +65,9 @@ pub fn take_snapshot(url: &Url, image_file: Option<&Path>, scale: Option<u32>) -
 }
 
 pub fn get_socket(url: &Url) -> Result<UdpSocket> {
-    ensure!(url.has_host(), "URL must have a host");
-    let host = url.host_str().unwrap();
+    let host = url
+        .host_str()
+        .ok_or_else(|| anyhow!("Invalid URL host: {}", url))?;
     let port = url.port().unwrap_or(11000);
     let multicast_group = Ipv4Addr::from_str(host)?;
     let listen_addr = SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, port);
@@ -118,27 +121,25 @@ pub fn capture_frame(udp_socket: UdpSocket) -> Result<Vec<u8>> {
 
 fn bit15_is_set(buf: &[u8]) -> bool {
     buf.len() >= HEADER_LEN
-        && LittleEndian::read_u16(&buf[LINE_NUMBER_POS..LINE_NUMBER_POS + 2]).bitand(END_OF_FRAME)
-            != 0
+        && LittleEndian::read_u16(&buf[LINE_NUM_POS..LINE_NUM_POS + 2]).bitand(END_OF_FRAME) != 0
 }
 
 pub fn make_image(frame: &[u8]) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     const IMAGE_WIDTH: usize = 384;
     const BYTES_PER_ROW: usize = IMAGE_WIDTH / 2;
     let rows = frame.len() / BYTES_PER_ROW;
-    let mut img: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::new(IMAGE_WIDTH as u32, rows as u32);
+    let mut img = ImageBuffer::new(IMAGE_WIDTH as u32, rows as u32);
     let mut i: usize = 0;
+
     for y in 0..rows {
         for x in 0..BYTES_PER_ROW {
             if i >= frame.len() {
                 break;
             }
-            let b = frame[i];
-            let (lo, hi) = ((b & 0xF) as usize, (b >> 4) as usize);
-            let c_lo = COLORS[lo];
-            let c_hi = COLORS[hi];
-            img.put_pixel((2 * x) as u32, y as u32, Rgb(c_lo));
-            img.put_pixel((2 * x + 1) as u32, y as u32, Rgb(c_hi));
+            let byte = frame[i];
+            let (lo, hi) = ((byte & 0xf) as usize, (byte >> 4) as usize);
+            img.put_pixel((2 * x) as u32, y as u32, COLORS[lo]);
+            img.put_pixel((2 * x + 1) as u32, y as u32, COLORS[hi]);
 
             i += 1;
         }
@@ -146,14 +147,18 @@ pub fn make_image(frame: &[u8]) -> ImageBuffer<Rgb<u8>, Vec<u8>> {
     img
 }
 
-fn make_scaled_image(frame: &[u8], scale: Option<u32>) -> Result<ImageBuffer<Rgb<u8>, Vec<u8>>> {
-    let img = make_image(frame);
-    let scale = scale.unwrap_or(1);
-    let img = image::imageops::resize(
-        &img,
-        img.width() * scale,
-        img.height() * scale,
-        FilterType::Nearest,
-    );
-    Ok(img)
+/// Scale image with optional scaling factor
+fn scale_image(
+    img: ImageBuffer<Rgb<u8>, Vec<u8>>,
+    scale: Option<u32>,
+) -> Result<ImageBuffer<Rgb<u8>, Vec<u8>>> {
+    match scale {
+        Some(1) | None => Ok(img),
+        Some(s) => Ok(image::imageops::resize(
+            &img,
+            img.width() * s,
+            img.height() * s,
+            FilterType::Nearest,
+        )),
+    }
 }
