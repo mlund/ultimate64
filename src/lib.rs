@@ -10,6 +10,7 @@ use crate::{
     petscii::Petscii,
 };
 use anyhow::{anyhow, bail, ensure, Ok, Result};
+use clap::ValueEnum;
 use core::fmt::Display;
 use log::{debug, warn};
 use reqwest::{
@@ -53,6 +54,38 @@ impl Display for DeviceInfo {
             self.core_version.as_deref().unwrap_or("N/A"),
             self.unique_id.as_deref().unwrap_or("N/A")
         )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum StreamType {
+    /// Video stream
+    Video,
+    /// Audio stream
+    Audio,
+    /// Debug stream
+    Debug,
+}
+
+impl StreamType {
+    /// Default port for the stream type (video = 11000, audio = 11001, debug = 11002)
+    pub fn default_port(&self) -> u16 {
+        match self {
+            StreamType::Video => 11000,
+            StreamType::Audio => 11001,
+            StreamType::Debug => 11002,
+        }
+    }
+}
+
+impl Display for StreamType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use StreamType::*;
+        match self {
+            Video => write!(f, "video"),
+            Audio => write!(f, "audio"),
+            Debug => write!(f, "debug"),
+        }
     }
 }
 
@@ -395,6 +428,18 @@ impl Rest {
             sleep(Duration::from_secs(3));
             self.type_text("load\"*\",8,1\nrun\n")?;
         }
+        Ok(())
+    }
+
+    /// Start video, audio, or debug streaming
+    pub fn start_stream(&self, host: &Host, port: u16, kind: StreamType) -> Result<()> {
+        self.put(&format!("streams/{kind}:start?ip={host}:{port}"))?;
+        Ok(())
+    }
+
+    /// Start video, audio, or debug streaming
+    pub fn stop_stream(&self, kind: StreamType) -> Result<()> {
+        self.put(&format!("streams/{kind}:stop"))?;
         Ok(())
     }
 }

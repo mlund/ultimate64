@@ -6,7 +6,7 @@ use parse_int::parse;
 use ultimate64::{
     aux,
     drives::{self, Drive},
-    vicstream, Rest,
+    vicstream, Rest, StreamType,
 };
 extern crate pretty_env_logger;
 use pretty_env_logger::env_logger::DEFAULT_FILTER_ENV;
@@ -172,6 +172,30 @@ enum Commands {
         #[clap(long, short = 'x', default_value_t = 1)]
         scale: u32,
     },
+    /// Start or stop video, audio, or debug stream
+    #[command(group(
+    clap::ArgGroup::new("action")
+        .args(["start", "stop"])
+        .required(true) // must give one
+))]
+    Stream {
+        /// Destination address for stream
+        #[clap(long, default_value = "239.0.1.64")]
+        #[arg(value_parser = Host::parse)]
+        ip: Host,
+        /// Port number [default: 11000 (video), 11001 (audio), 11002 (debug)]
+        #[clap(long, short = 'p')]
+        port: Option<u16>,
+        /// Stream name
+        #[clap(long, short = 'n')]
+        name: StreamType,
+        /// Start stream
+        #[clap(long, action)]
+        start: bool,
+        /// Stop stream
+        #[clap(long, action)]
+        stop: bool,
+    },
     /// Emulate keyboard input
     Type {
         /// Unicode text to type - will be converted to PETSCII
@@ -329,6 +353,20 @@ fn do_main() -> Result<()> {
         }
         Commands::Screenshot { output, url, scale } => {
             vicstream::take_snapshot(&url, output.as_deref(), Some(scale))?;
+        }
+        Commands::Stream {
+            ip,
+            port,
+            name: kind,
+            start,
+            stop,
+        } => {
+            let port = port.unwrap_or_else(|| kind.default_port());
+            if start {
+                ultimate.start_stream(&ip, port, kind)?;
+            } else if stop {
+                ultimate.stop_stream(kind)?;
+            }
         }
         Commands::Type { text } => {
             ultimate.type_text(&text)?;
