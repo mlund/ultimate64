@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 use log::debug;
 use parse_int::parse;
 use ultimate64::{
-    aux,
+    auxiliary,
     drives::{self, Drive},
     vicstream, Rest, StreamType,
 };
@@ -296,7 +296,7 @@ fn do_main() -> Result<()> {
         }
         Commands::Play { file, songnr } => {
             let data = fs::read(&file)?;
-            let ext = aux::get_extension(&file).unwrap_or_default();
+            let ext = auxiliary::get_extension(&file).unwrap_or_default();
             match ext.as_str() {
                 "sid" => ultimate.sid_play(&data, songnr)?,
                 "mod" => ultimate.mod_play(&data)?,
@@ -346,7 +346,7 @@ fn do_main() -> Result<()> {
         }
         Commands::Run { file } => {
             let data = fs::read(&file)?;
-            match aux::get_extension(&file).unwrap_or_default().as_str() {
+            match auxiliary::get_extension(&file).unwrap_or_default().as_str() {
                 "crt" => ultimate.run_crt(&data)?,
                 _ => ultimate.run_prg(&data)?,
             }

@@ -1,6 +1,6 @@
 //! # Disk drive and disk image manipulation
 
-use crate::aux;
+use crate::auxiliary;
 use anyhow::{bail, Result};
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
@@ -49,7 +49,7 @@ pub enum DiskImageType {
 impl DiskImageType {
     /// New disk image type from file name
     pub fn from_file_name<T: AsRef<Path>>(path: T) -> Result<Self> {
-        let ext = aux::get_extension(path).unwrap_or_default();
+        let ext = auxiliary::get_extension(path).unwrap_or_default();
         Ok(match ext.as_str() {
             "d64" => Self::D64,
             "d71" => Self::D71,
