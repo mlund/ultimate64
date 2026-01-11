@@ -5,7 +5,7 @@
 //!
 
 use crate::{
-    aux::check_address_overflow,
+    auxiliary::check_address_overflow,
     drives::{DiskImageType, Drive, DriveList},
     petscii::Petscii,
 };
@@ -21,7 +21,7 @@ use reqwest::{
 use std::{collections::HashMap, path::Path, thread::sleep, time::Duration};
 use url::Host;
 
-pub mod aux;
+pub mod auxiliary;
 pub mod drives;
 pub mod petscii;
 pub mod vicstream;
@@ -365,7 +365,7 @@ impl Rest {
                 Ok((address, data.len()))
             }
             None => {
-                let load_address = aux::extract_load_address(data)?;
+                let load_address = auxiliary::extract_load_address(data)?;
                 self.write_mem(load_address, &data[2..])?; // skip first two bytes
                 Ok((load_address, data.len() - 2))
             }
