@@ -6,9 +6,9 @@
 
 # Ultimate64
 
-Rust library and command line interface for communicating with
-[Ultimate-64 and Ultimate-II+](https://ultimate64.com) devices using the
-[REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html).
+Rust library and command line interface for communicating with [Ultimate-64 and Ultimate-II+](https://ultimate64.com) devices using
+the [REST API](https://1541u-documentation.readthedocs.io/en/latest/api/api_calls.html).
+The library is used in the [Ultimate Manager GUI application](https://github.com/sandlbn/ultimate64-manager).
 
 # Installation
 
